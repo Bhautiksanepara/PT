@@ -33,6 +33,41 @@
             </a>
         </li>
 
+        <li class="{{ request()->routeIs('admin.batches.*') ? 'active' : '' }}">
+            <a href="{{ route('admin.batches.index') }}">
+                <i class="bx bx-box"></i>
+                <span>Sample Production</span>
+            </a>
+        </li>
+
+        <li class="{{ request()->routeIs('admin.samples.*') ? 'active' : '' }}">
+            <a href="{{ route('admin.samples.index') }}">
+                <i class="bx bx-qr-scan"></i>
+                <span>Sample Assignment</span>
+            </a>
+        </li>
+
+        <li class="{{ request()->routeIs('admin.dispatches.*') ? 'active' : '' }}">
+            <a href="{{ route('admin.dispatches.index') }}">
+                <i class="bx bx-package"></i>
+                <span>Sample Dispatches</span>
+            </a>
+        </li>
+
+        <li class="{{ request()->routeIs('admin.observations.*') ? 'active' : '' }}">
+            <a href="{{ route('admin.observations.index') }}">
+                <i class="bx bx-test-tube"></i>
+                <span>Observations</span>
+            </a>
+        </li>
+
+        <li class="{{ request()->routeIs('admin.stats.*') ? 'active' : '' }}">
+            <a href="{{ route('admin.stats.index') }}">
+                <i class="bx bx-line-chart"></i>
+                <span>Statistical Analysis</span>
+            </a>
+        </li>
+
         <li class="{{ request()->routeIs('admin.participants.*') ? 'active' : '' }}">
             <a href="{{ route('admin.participants.index') }}">
                 <i class="bx bx-group"></i>
@@ -40,33 +75,17 @@
             </a>
         </li>
 
-        <p>Upcoming Modules</p>
-
-        <li class="opacity-50">
-            <a href="javascript:void(0)" onclick="alert('Module under development (Phase 5)')">
-                <i class="bx bx-box"></i>
-                <span>Sample Dispatches</span>
-            </a>
-        </li>
-
-        <li class="opacity-50">
-            <a href="javascript:void(0)" onclick="alert('Module under development (Phase 6)')">
-                <i class="bx bx-file-find"></i>
-                <span>Observations</span>
-            </a>
-        </li>
-
-        <li class="opacity-50">
-            <a href="javascript:void(0)" onclick="alert('Module under development (Phase 7)')">
-                <i class="bx bx-line-chart"></i>
-                <span>Statistical Engine</span>
-            </a>
-        </li>
-
-        <li class="opacity-50">
-            <a href="javascript:void(0)" onclick="alert('Module under development (Phase 8)')">
-                <i class="bx bx-certification"></i>
+        <li class="{{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
+            <a href="{{ route('admin.reports.index') }}">
+                <i class="bx bx-award"></i>
                 <span>Reports & Certs</span>
+            </a>
+        </li>
+
+        <li class="{{ request()->routeIs('admin.archive.*') ? 'active' : '' }}">
+            <a href="{{ route('admin.archive.index') }}">
+                <i class="bx bx-archive"></i>
+                <span>Historical Archive</span>
             </a>
         </li>
     </ul>

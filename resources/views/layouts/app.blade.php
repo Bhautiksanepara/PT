@@ -50,7 +50,10 @@
             background: var(--sidebar-bg);
             color: var(--sidebar-text);
             transition: all 0.3s;
-            min-height: 100vh;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
             z-index: 1000;
         }
 
@@ -198,13 +201,14 @@
         .stat-card.red { border-color: #ef4444; }
 
         .stat-icon {
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 1.35rem;
+            flex-shrink: 0;
         }
 
         .bg-blue-light { background: #dbeafe; color: #1d4ed8; }

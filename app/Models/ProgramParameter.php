@@ -22,4 +22,9 @@ class ProgramParameter extends Model
     {
         return $this->belongsTo(PtProgram::class, 'program_id', 'program_id');
     }
+
+    public function observations()
+    {
+        return $this->hasMany(Observation::class, 'parameter_id', 'parameter_id');
+    }
 }

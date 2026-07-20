@@ -21,12 +21,12 @@
     <div class="col-xl-2 col-lg-4 col-md-6">
         <div class="card stat-card blue h-100">
             <div class="card-body p-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-muted small fw-semibold">Participants</div>
+                <div class="d-flex justify-content-between align-items-center gap-2">
+                    <div style="min-width: 0;">
+                        <div class="text-muted small fw-semibold text-truncate">Participants</div>
                         <h3 class="fw-bold mb-0 mt-1">{{ number_format($totalParticipants) }}</h3>
                     </div>
-                    <div class="stat-icon bg-blue-light">
+                    <div class="stat-icon bg-blue-light flex-shrink-0">
                         <i class="bx bx-group"></i>
                     </div>
                 </div>
@@ -38,12 +38,12 @@
     <div class="col-xl-2 col-lg-4 col-md-6">
         <div class="card stat-card green h-100">
             <div class="card-body p-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-muted small fw-semibold">Active Programs</div>
+                <div class="d-flex justify-content-between align-items-center gap-2">
+                    <div style="min-width: 0;">
+                        <div class="text-muted small fw-semibold text-truncate">Active Programs</div>
                         <h3 class="fw-bold mb-0 mt-1 text-success">{{ number_format($activePrograms) }}</h3>
                     </div>
-                    <div class="stat-icon bg-green-light">
+                    <div class="stat-icon bg-green-light flex-shrink-0">
                         <i class="bx bx-layer"></i>
                     </div>
                 </div>
@@ -55,13 +55,15 @@
     <div class="col-xl-2 col-lg-4 col-md-6">
         <div class="card stat-card purple h-100">
             <div class="card-body p-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-muted small fw-semibold">Revenue</div>
-                        <h4 class="fw-bold mb-0 mt-1 text-purple">₹{{ number_format($totalRevenue, 2) }}</h4>
+                <div class="d-flex justify-content-between align-items-center gap-1">
+                    <div style="min-width: 0;">
+                        <div class="text-muted small fw-semibold text-truncate">Revenue</div>
+                        <h5 class="fw-bold mb-0 mt-1 text-purple" style="font-size: 1.1rem; white-space: nowrap;">
+                            ₹{{ $totalRevenue == floor($totalRevenue) ? number_format($totalRevenue) : number_format($totalRevenue, 2) }}
+                        </h5>
                     </div>
-                    <div class="stat-icon bg-purple-light">
-                        <i class="bx bx-rupee"></i>
+                    <div class="stat-icon bg-purple-light flex-shrink-0" style="width: 38px; height: 38px; font-size: 1.15rem;">
+                        <i class="bx bx-wallet"></i>
                     </div>
                 </div>
             </div>
@@ -72,12 +74,12 @@
     <div class="col-xl-2 col-lg-4 col-md-6">
         <div class="card stat-card orange h-100">
             <div class="card-body p-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-muted small fw-semibold">Dispatches Pending</div>
+                <div class="d-flex justify-content-between align-items-center gap-2">
+                    <div style="min-width: 0;">
+                        <div class="text-muted small fw-semibold text-truncate">Dispatches Pending</div>
                         <h3 class="fw-bold mb-0 mt-1 text-warning">{{ number_format($pendingDispatches) }}</h3>
                     </div>
-                    <div class="stat-icon bg-orange-light">
+                    <div class="stat-icon bg-orange-light flex-shrink-0">
                         <i class="bx bx-package"></i>
                     </div>
                 </div>
@@ -89,12 +91,12 @@
     <div class="col-xl-2 col-lg-4 col-md-6">
         <div class="card stat-card teal h-100">
             <div class="card-body p-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-muted small fw-semibold">Observations</div>
+                <div class="d-flex justify-content-between align-items-center gap-2">
+                    <div style="min-width: 0;">
+                        <div class="text-muted small fw-semibold text-truncate">Observations</div>
                         <h3 class="fw-bold mb-0 mt-1 text-info">{{ number_format($submittedObservations) }}</h3>
                     </div>
-                    <div class="stat-icon bg-teal-light">
+                    <div class="stat-icon bg-teal-light flex-shrink-0">
                         <i class="bx bx-file-find"></i>
                     </div>
                 </div>
@@ -106,13 +108,13 @@
     <div class="col-xl-2 col-lg-4 col-md-6">
         <div class="card stat-card red h-100">
             <div class="card-body p-3">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="text-muted small fw-semibold">Reports Pending</div>
+                <div class="d-flex justify-content-between align-items-center gap-2">
+                    <div style="min-width: 0;">
+                        <div class="text-muted small fw-semibold text-truncate">Reports Pending</div>
                         <h3 class="fw-bold mb-0 mt-1 text-danger">{{ number_format($pendingReports) }}</h3>
                     </div>
-                    <div class="stat-icon bg-red-light">
-                        <i class="bx bx-certification"></i>
+                    <div class="stat-icon bg-red-light flex-shrink-0">
+                        <i class="bx bx-time-five"></i>
                     </div>
                 </div>
             </div>
@@ -137,8 +139,16 @@
     <!-- Revenue & Registration Trend -->
     <div class="col-lg-7">
         <div class="card h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <h6 class="mb-0 fw-bold"><i class="bx bx-trending-up me-1 text-success"></i> PT Performance & Revenue Overview</h6>
+                <form action="{{ route('admin.dashboard') }}" method="GET" class="d-flex align-items-center gap-1">
+                    <select name="chart_range" class="form-select form-select-sm shadow-sm" onchange="this.form.submit()" style="width: auto; min-width: 140px;">
+                        <option value="12_months" {{ $chartRange === '12_months' ? 'selected' : '' }}>Last 12 Months</option>
+                        @foreach($availableYears as $yearVal)
+                            <option value="{{ $yearVal }}" {{ (string)$chartRange === (string)$yearVal ? 'selected' : '' }}>Year {{ $yearVal }}</option>
+                        @endforeach
+                    </select>
+                </form>
             </div>
             <div class="card-body">
                 <div id="revenueTrendChart" style="width: 100%; min-height: 280px;"></div>
@@ -175,9 +185,9 @@
                                     <td>{{ $reg->laboratory_name }}</td>
                                     <td><span class="badge bg-light text-dark border">{{ $reg->program_code }}</span></td>
                                     <td>
-                                        @if($reg->payment_status === 'success')
+                                        @if(($reg->payment_status ?? '') === 'success')
                                             <span class="badge badge-soft-success">Paid</span>
-                                        @elseif($reg->payment_status === 'pending')
+                                        @elseif(($reg->payment_status ?? '') === 'pending')
                                             <span class="badge badge-soft-warning">Pending</span>
                                         @else
                                             <span class="badge badge-soft-secondary">Unpaid</span>

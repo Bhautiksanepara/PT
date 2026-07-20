@@ -42,6 +42,11 @@ class PtProgram extends Model
         return $this->hasOne(PtPlan::class, 'program_id', 'program_id');
     }
 
+    public function batches()
+    {
+        return $this->hasMany(SampleBatch::class, 'program_id', 'program_id');
+    }
+
     public function creator()
     {
         return $this->belongsTo(AdminUser::class, 'created_by', 'admin_id');

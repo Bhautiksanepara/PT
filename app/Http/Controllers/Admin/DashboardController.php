@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         // 1. Total Participants
         $totalParticipants = DB::table('labs')->count();
@@ -28,7 +29,7 @@ class DashboardController extends Controller
         // 6. Pending Reports
         $pendingReports = DB::table('pt_programs')->where('program_status', 'closed')->count();
 
-        // Program Status counts for Donut Chart (REAL DATA)
+        // Program Status counts for Donut Chart
         $programStatusCounts = [
             'draft' => DB::table('pt_programs')->where('program_status', 'draft')->count(),
             'open' => DB::table('pt_programs')->where('program_status', 'open')->count(),
@@ -36,33 +37,64 @@ class DashboardController extends Controller
             'completed' => DB::table('pt_programs')->where('program_status', 'completed')->count(),
         ];
 
-        // 7. Monthly Registrations & Revenue Trend (REAL DATA - Last 6 Months)
+        // 7. Dynamic Monthly Registrations & Revenue Trend (Filterable by Year / 12-Month Rolling)
+        $chartRange = $request->get('chart_range', '12_months');
+
         $monthsLabels = [];
         $monthlyRegistrations = [];
         $monthlyRevenue = [];
 
-        for ($i = 5; $i >= 0; $i--) {
-            $monthDate = Carbon::now()->subMonths($i);
-            $monthLabel = $monthDate->format('M Y');
-            $year = $monthDate->year;
-            $month = $monthDate->month;
+        if (is_numeric($chartRange)) {
+            $selectedYear = (int)$chartRange;
+            for ($m = 1; $m <= 12; $m++) {
+                $monthDate = Carbon::createFromDate($selectedYear, $m, 1);
+                $monthsLabels[] = $monthDate->format('M Y');
 
-            $monthsLabels[] = $monthLabel;
+                $regCount = DB::table('program_registrations')
+                    ->whereYear('registered_at', $selectedYear)
+                    ->whereMonth('registered_at', $m)
+                    ->count();
+                $monthlyRegistrations[] = $regCount;
 
-            // Monthly Registrations count
-            $regCount = DB::table('program_registrations')
-                ->whereYear('registered_at', $year)
-                ->whereMonth('registered_at', $month)
-                ->count();
-            $monthlyRegistrations[] = $regCount;
+                $revSum = DB::table('payments')
+                    ->where('payment_status', 'success')
+                    ->whereYear('paid_at', $selectedYear)
+                    ->whereMonth('paid_at', $m)
+                    ->sum('final_amount');
+                $monthlyRevenue[] = (float) $revSum;
+            }
+        } else {
+            // Rolling Last 12 Months
+            for ($i = 11; $i >= 0; $i--) {
+                $monthDate = Carbon::now()->subMonths($i);
+                $monthsLabels[] = $monthDate->format('M Y');
+                $year = $monthDate->year;
+                $month = $monthDate->month;
 
-            // Monthly Successful Revenue sum
-            $revSum = DB::table('payments')
-                ->where('payment_status', 'success')
-                ->whereYear('paid_at', $year)
-                ->whereMonth('paid_at', $month)
-                ->sum('final_amount');
-            $monthlyRevenue[] = (float) $revSum;
+                $regCount = DB::table('program_registrations')
+                    ->whereYear('registered_at', $year)
+                    ->whereMonth('registered_at', $month)
+                    ->count();
+                $monthlyRegistrations[] = $regCount;
+
+                $revSum = DB::table('payments')
+                    ->where('payment_status', 'success')
+                    ->whereYear('paid_at', $year)
+                    ->whereMonth('paid_at', $month)
+                    ->sum('final_amount');
+                $monthlyRevenue[] = (float) $revSum;
+            }
+        }
+
+        // Available years in database for dropdown filter
+        $years1 = DB::table('program_registrations')->whereNotNull('registered_at')->selectRaw('YEAR(registered_at) as year')->pluck('year')->toArray();
+        $years2 = DB::table('payments')->whereNotNull('paid_at')->selectRaw('YEAR(paid_at) as year')->pluck('year')->toArray();
+
+        $availableYears = array_values(array_unique(array_filter(array_merge($years1, $years2))));
+        rsort($availableYears);
+
+        if (empty($availableYears)) {
+            $availableYears = [(int)date('Y')];
         }
 
         // Recent Registrations (Last 5)
@@ -71,20 +103,15 @@ class DashboardController extends Controller
             ->join('pt_programs', 'program_registrations.program_id', '=', 'pt_programs.program_id')
             ->leftJoin('payments', 'program_registrations.registration_id', '=', 'payments.registration_id')
             ->select(
+                'program_registrations.registration_id',
                 'program_registrations.registration_number',
+                'program_registrations.status',
                 'program_registrations.registered_at',
                 'labs.laboratory_name',
                 'pt_programs.program_code',
-                'program_registrations.status as registration_status',
                 'payments.payment_status'
             )
             ->orderBy('program_registrations.registered_at', 'desc')
-            ->limit(5)
-            ->get();
-
-        // Notifications Log
-        $notifications = DB::table('notifications_log')
-            ->orderBy('sent_at', 'desc')
             ->limit(5)
             ->get();
 
@@ -99,8 +126,9 @@ class DashboardController extends Controller
             'monthsLabels',
             'monthlyRegistrations',
             'monthlyRevenue',
-            'recentRegistrations',
-            'notifications'
+            'chartRange',
+            'availableYears',
+            'recentRegistrations'
         ));
     }
 }

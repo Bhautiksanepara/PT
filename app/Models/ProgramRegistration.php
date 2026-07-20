@@ -37,4 +37,9 @@ class ProgramRegistration extends Model
     {
         return $this->hasOne(Payment::class, 'registration_id', 'registration_id');
     }
+
+    public function sample()
+    {
+        return $this->hasOne(Sample::class, 'registration_id', 'registration_id');
+    }
 }
