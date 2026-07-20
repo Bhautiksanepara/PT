@@ -252,16 +252,16 @@
         var statusChart = new ApexCharts(document.querySelector("#programStatusChart"), statusOptions);
         statusChart.render();
 
-        // 2. Revenue & Registrations Trend Chart
+        // 2. Revenue & Registrations Trend Chart (REAL DYNAMIC DATA)
         var trendOptions = {
             series: [{
                 name: 'Registrations',
                 type: 'column',
-                data: [4, 6, 8, 12, 15, 18]
+                data: @json($monthlyRegistrations)
             }, {
                 name: 'Revenue (₹)',
                 type: 'line',
-                data: [60000, 90000, 120000, 180000, 225000, 270000]
+                data: @json($monthlyRevenue)
             }],
             chart: {
                 height: 280,
@@ -273,7 +273,7 @@
             },
             colors: ['#3b82f6', '#10b981'],
             xaxis: {
-                categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                categories: @json($monthsLabels),
             },
             yaxis: [{
                 title: { text: 'Registrations' },

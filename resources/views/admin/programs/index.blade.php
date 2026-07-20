@@ -86,12 +86,12 @@
                             <td class="fw-semibold">₹{{ number_format($program->program_fee, 2) }}</td>
                             <td><span class="badge bg-info text-dark rounded-pill">{{ $program->parameters_count }} Parameters</span></td>
                             <td>
-                                @if($program->registration_status === 'active')
-                                    <span class="badge badge-soft-success"><i class="bx bx-check-circle me-1"></i> Active</span>
-                                @elseif($program->registration_status === 'upcoming')
+                                @if($program->computed_registration_status === 'active')
+                                    <span class="badge badge-soft-success"><i class="bx bx-check-circle me-1"></i> Active (Open)</span>
+                                @elseif($program->computed_registration_status === 'upcoming')
                                     <span class="badge badge-soft-warning"><i class="bx bx-time me-1"></i> Upcoming</span>
                                 @else
-                                    <span class="badge badge-soft-secondary"><i class="bx bx-x-circle me-1"></i> Closed</span>
+                                    <span class="badge badge-soft-secondary"><i class="bx bx-lock-alt me-1"></i> Closed (Disabled)</span>
                                 @endif
                             </td>
                             <td>
@@ -112,9 +112,18 @@
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                                         <li><a class="dropdown-item" href="{{ route('admin.programs.show', $program->program_id) }}"><i class="bx bx-show me-2 text-info"></i> View Details</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.plans.show', $program->program_id) }}"><i class="bx bx-task me-2 text-success"></i> Official PT Plan</a></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.programs.edit', $program->program_id) }}"><i class="bx bx-edit me-2 text-primary"></i> Edit Program</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <form action="{{ route('admin.programs.toggle-window', $program->program_id) }}" method="POST">
+                                                @csrf
+                                                <button type="submit" class="dropdown-item text-warning">
+                                                    <i class="bx bx-slider-alt me-2"></i> {{ $program->registration_status === 'active' ? 'Force Close Window' : 'Force Open Window' }}
+                                                </button>
+                                            </form>
+                                        </li>
                                         @if($program->program_status !== 'closed')
-                                            <li><hr class="dropdown-divider"></li>
                                             <li>
                                                 <form action="{{ route('admin.programs.close', $program->program_id) }}" method="POST" onsubmit="return confirm('Are you sure you want to close this program?')">
                                                     @csrf

@@ -9,6 +9,9 @@
         <p class="text-muted small mb-0">{{ $program->program_name }}</p>
     </div>
     <div class="d-flex gap-2">
+        <a href="{{ route('admin.plans.show', $program->program_id) }}" class="btn btn-success btn-sm shadow-sm">
+            <i class="bx bx-task me-1"></i> Official PT Plan
+        </a>
         <a href="{{ route('admin.programs.edit', $program->program_id) }}" class="btn btn-primary btn-sm">
             <i class="bx bx-edit me-1"></i> Edit Program
         </a>

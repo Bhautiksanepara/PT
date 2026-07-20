@@ -26,6 +26,13 @@
             </a>
         </li>
 
+        <li class="{{ request()->routeIs('admin.plans.*') ? 'active' : '' }}">
+            <a href="{{ route('admin.plans.index') }}">
+                <i class="bx bx-task"></i>
+                <span>Official PT Plans</span>
+            </a>
+        </li>
+
         <li class="{{ request()->routeIs('admin.participants.*') ? 'active' : '' }}">
             <a href="{{ route('admin.participants.index') }}">
                 <i class="bx bx-group"></i>

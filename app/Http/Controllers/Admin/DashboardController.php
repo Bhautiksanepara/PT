@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -27,13 +28,42 @@ class DashboardController extends Controller
         // 6. Pending Reports
         $pendingReports = DB::table('pt_programs')->where('program_status', 'closed')->count();
 
-        // Program Status counts for Donut Chart
+        // Program Status counts for Donut Chart (REAL DATA)
         $programStatusCounts = [
             'draft' => DB::table('pt_programs')->where('program_status', 'draft')->count(),
             'open' => DB::table('pt_programs')->where('program_status', 'open')->count(),
             'closed' => DB::table('pt_programs')->where('program_status', 'closed')->count(),
             'completed' => DB::table('pt_programs')->where('program_status', 'completed')->count(),
         ];
+
+        // 7. Monthly Registrations & Revenue Trend (REAL DATA - Last 6 Months)
+        $monthsLabels = [];
+        $monthlyRegistrations = [];
+        $monthlyRevenue = [];
+
+        for ($i = 5; $i >= 0; $i--) {
+            $monthDate = Carbon::now()->subMonths($i);
+            $monthLabel = $monthDate->format('M Y');
+            $year = $monthDate->year;
+            $month = $monthDate->month;
+
+            $monthsLabels[] = $monthLabel;
+
+            // Monthly Registrations count
+            $regCount = DB::table('program_registrations')
+                ->whereYear('registered_at', $year)
+                ->whereMonth('registered_at', $month)
+                ->count();
+            $monthlyRegistrations[] = $regCount;
+
+            // Monthly Successful Revenue sum
+            $revSum = DB::table('payments')
+                ->where('payment_status', 'success')
+                ->whereYear('paid_at', $year)
+                ->whereMonth('paid_at', $month)
+                ->sum('final_amount');
+            $monthlyRevenue[] = (float) $revSum;
+        }
 
         // Recent Registrations (Last 5)
         $recentRegistrations = DB::table('program_registrations')
@@ -66,6 +96,9 @@ class DashboardController extends Controller
             'submittedObservations',
             'pendingReports',
             'programStatusCounts',
+            'monthsLabels',
+            'monthlyRegistrations',
+            'monthlyRevenue',
             'recentRegistrations',
             'notifications'
         ));

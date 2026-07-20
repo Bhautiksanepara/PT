@@ -180,4 +180,15 @@ class PtProgramController extends Controller
 
         return back()->with('success', "Program {$program->program_code} has been closed.");
     }
+
+    public function toggleRegistrationStatus($id)
+    {
+        $program = PtProgram::findOrFail($id);
+        $newStatus = $program->registration_status === 'active' ? 'closed' : 'active';
+        
+        $program->update(['registration_status' => $newStatus]);
+
+        $message = $newStatus === 'active' ? "Registration window opened for {$program->program_code}." : "Registration window closed for {$program->program_code}.";
+        return back()->with('success', $message);
+    }
 }
