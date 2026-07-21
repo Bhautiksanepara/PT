@@ -54,7 +54,13 @@
             position: sticky;
             top: 0;
             overflow-y: auto;
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
             z-index: 1000;
+        }
+
+        #sidebar::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
         }
 
         #sidebar .sidebar-header {

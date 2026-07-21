@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\ObservationController;
 use App\Http\Controllers\Admin\StatisticalEngineController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ArchiveController;
+use App\Http\Controllers\Admin\ReferralCodeController;
 
 // Redirect root URL to Admin Login / Dashboard
 Route::get('/', function () {
@@ -95,6 +96,7 @@ Route::prefix('admin')->middleware(App\Http\Middleware\AdminMiddleware::class)->
     Route::get('stats', [StatisticalEngineController::class, 'index'])->name('admin.stats.index');
     Route::get('programs/{program}/parameters/{parameter}/stats', [StatisticalEngineController::class, 'parameterStats'])->name('admin.stats.parameter');
     Route::get('programs/{program}/parameters/{parameter}/stats/export', [StatisticalEngineController::class, 'exportCsv'])->name('admin.stats.export');
+    Route::post('programs/{program}/freeze-stats', [StatisticalEngineController::class, 'freezeSchemeStats'])->name('admin.stats.freeze');
 
     // Module 11: Report Generation & Certificates
     Route::get('reports', [ReportController::class, 'index'])->name('admin.reports.index');
@@ -106,6 +108,11 @@ Route::prefix('admin')->middleware(App\Http\Middleware\AdminMiddleware::class)->
     // Module 12: Historical Archive
     Route::get('archive', [ArchiveController::class, 'index'])->name('admin.archive.index');
     Route::get('archive/programs/{program}', [ArchiveController::class, 'showProgram'])->name('admin.archive.program');
+
+    // Referral Code Management
+    Route::get('referrals', [ReferralCodeController::class, 'index'])->name('admin.referrals.index');
+    Route::post('referrals', [ReferralCodeController::class, 'store'])->name('admin.referrals.store');
+    Route::delete('referrals/{referral}', [ReferralCodeController::class, 'destroy'])->name('admin.referrals.destroy');
 
     // Module 3: Participant Management
     Route::get('participants', [ParticipantController::class, 'index'])->name('admin.participants.index');

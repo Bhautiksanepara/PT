@@ -299,10 +299,9 @@ class AdminUserSeeder extends Seeder
             ]);
         }
 
-        // 4. Past Archived 2025 PT Programs (Seeded with Registrations & Observations)
+        // 4. Past Archived 2025 PT Programs
         $pastDate = now()->subYear();
 
-        // 2025 Program 1: Soil Analysis
         DB::table('pt_programs')->updateOrInsert(
             ['program_code' => 'PT-CHEM-2025-01'],
             [
@@ -323,92 +322,7 @@ class AdminUserSeeder extends Seeder
                 'updated_at' => $pastDate,
             ]
         );
-        $prog2025Id = DB::table('pt_programs')->where('program_code', 'PT-CHEM-2025-01')->value('program_id');
 
-        DB::table('program_parameters')->where('program_id', $prog2025Id)->delete();
-        DB::table('program_parameters')->insert([
-            ['program_id' => $prog2025Id, 'parameter_name' => 'Organic Carbon', 'test_method' => 'Walkley-Black Method', 'unit' => '%', 'created_at' => $pastDate],
-            ['program_id' => $prog2025Id, 'parameter_name' => 'Available Nitrogen', 'test_method' => 'Kjeldahl Method', 'unit' => 'kg/ha', 'created_at' => $pastDate]
-        ]);
-        $paramOc = DB::table('program_parameters')->where('program_id', $prog2025Id)->where('parameter_name', 'Organic Carbon')->value('parameter_id');
-
-        // Seed 4 Labs for 2025 Soil Program
-        $soilOcResults = ['0.75', '0.78', '0.72', '0.85'];
-        foreach (array_slice($labIds, 0, 4) as $idx => $lId) {
-            $regNum2025 = 'REG-2025-000' . ($idx + 1);
-            DB::table('program_registrations')->updateOrInsert(
-                ['registration_number' => $regNum2025],
-                [
-                    'program_id' => $prog2025Id,
-                    'lab_id' => $lId,
-                    'sample_quantity' => '1 Jar (200g)',
-                    'shipping_address' => 'Industrial Area',
-                    'billing_address' => 'Industrial Area',
-                    'discount_applied' => 0.00,
-                    'status' => 'confirmed',
-                    'registered_at' => $pastDate->copy()->addDays(2),
-                ]
-            );
-            $r2025Id = DB::table('program_registrations')->where('registration_number', $regNum2025)->value('registration_id');
-
-            DB::table('payments')->updateOrInsert(
-                ['registration_id' => $r2025Id],
-                [
-                    'amount' => 12500.00,
-                    'discount_amount' => 0.00,
-                    'final_amount' => 12500.00,
-                    'payment_method' => 'Bank Transfer',
-                    'transaction_id' => 'TXN2025' . ($idx + 1),
-                    'payment_status' => 'success',
-                    'paid_at' => $pastDate->copy()->addDays(2),
-                    'created_at' => $pastDate->copy()->addDays(2),
-                ]
-            );
-
-            $sCode2025 = 'PT-2025-00' . ($idx + 1);
-            DB::table('samples')->updateOrInsert(
-                ['sample_code' => $sCode2025],
-                [
-                    'program_id' => $prog2025Id,
-                    'registration_id' => $r2025Id,
-                    'batch_id' => $batch1Id,
-                    'qr_code' => 'QR-' . $sCode2025,
-                    'status' => 'dispatched',
-                    'created_at' => $pastDate->copy()->addDays(10),
-                ]
-            );
-            $s2025Id = DB::table('samples')->where('sample_code', $sCode2025)->value('sample_id');
-
-            DB::table('dispatches')->updateOrInsert(
-                ['sample_id' => $s2025Id],
-                [
-                    'dispatch_date' => $pastDate->copy()->addDays(12)->toDateString(),
-                    'courier_name' => 'BlueDart Express',
-                    'tracking_number' => 'BD-2025-00' . ($idx + 1),
-                    'dispatched_by' => $admin->admin_id,
-                    'notification_sent' => 1,
-                    'notification_sent_at' => $pastDate->copy()->addDays(12),
-                    'created_at' => $pastDate->copy()->addDays(12),
-                ]
-            );
-
-            DB::table('observations')->insert([
-                'sample_id' => $s2025Id,
-                'registration_id' => $r2025Id,
-                'lab_id' => $lId,
-                'parameter_id' => $paramOc,
-                'test_method' => 'Walkley-Black Method',
-                'result_value' => $soilOcResults[$idx],
-                'unit' => '%',
-                'remarks' => 'Completed in 2025.',
-                'is_locked' => 1,
-                'submitted_at' => $pastDate->copy()->addDays(25),
-                'created_at' => $pastDate->copy()->addDays(25),
-                'updated_at' => $pastDate->copy()->addDays(25),
-            ]);
-        }
-
-        // 2025 Program 2: Biological Testing
         DB::table('pt_programs')->updateOrInsert(
             ['program_code' => 'PT-BIO-2025-02'],
             [
@@ -429,89 +343,66 @@ class AdminUserSeeder extends Seeder
                 'updated_at' => $pastDate->copy()->addMonths(4),
             ]
         );
-        $progBioId = DB::table('pt_programs')->where('program_code', 'PT-BIO-2025-02')->value('program_id');
 
-        DB::table('program_parameters')->where('program_id', $progBioId)->delete();
-        DB::table('program_parameters')->insert([
-            ['program_id' => $progBioId, 'parameter_name' => 'Total Plate Count', 'test_method' => 'IS 5402', 'unit' => 'CFU/g', 'created_at' => $pastDate],
-            ['program_id' => $progBioId, 'parameter_name' => 'E. Coli Count', 'test_method' => 'IS 5887 (Part 1)', 'unit' => 'CFU/g', 'created_at' => $pastDate]
-        ]);
-        $paramTpc = DB::table('program_parameters')->where('program_id', $progBioId)->where('parameter_name', 'Total Plate Count')->value('parameter_id');
+        // 5. Seed Referral Codes (Module: Referral Code System)
+        DB::table('referral_codes')->updateOrInsert(
+            ['code' => 'WELCOME5'],
+            [
+                'discount_type' => 'percentage',
+                'discount_value' => 5.00,
+                'is_client_specific' => 0,
+                'client_lab_id' => null,
+                'is_one_time_use' => 0,
+                'expiry_date' => null,
+                'is_used' => 0,
+                'created_by' => $admin->admin_id,
+                'created_at' => now(),
+            ]
+        );
 
-        // Seed 3 Labs for Bio 2025
-        $bioTpcResults = ['3500', '3400', '3650'];
-        foreach (array_slice($labIds, 0, 3) as $idx => $lId) {
-            $regBioNum = 'REG-BIO-2025-0' . ($idx + 1);
-            DB::table('program_registrations')->updateOrInsert(
-                ['registration_number' => $regBioNum],
-                [
-                    'program_id' => $progBioId,
-                    'lab_id' => $lId,
-                    'sample_quantity' => '1 Vial (10g)',
-                    'shipping_address' => 'Bio Park',
-                    'billing_address' => 'Bio Park',
-                    'discount_applied' => 0.00,
-                    'status' => 'confirmed',
-                    'registered_at' => $pastDate->copy()->addMonths(4)->addDays(5),
-                ]
-            );
-            $rBioId = DB::table('program_registrations')->where('registration_number', $regBioNum)->value('registration_id');
+        DB::table('referral_codes')->updateOrInsert(
+            ['code' => 'PROMO10'],
+            [
+                'discount_type' => 'percentage',
+                'discount_value' => 10.00,
+                'is_client_specific' => 0,
+                'client_lab_id' => null,
+                'is_one_time_use' => 0,
+                'expiry_date' => now()->addDays(30)->toDateString(),
+                'is_used' => 0,
+                'created_by' => $admin->admin_id,
+                'created_at' => now(),
+            ]
+        );
 
-            DB::table('payments')->updateOrInsert(
-                ['registration_id' => $rBioId],
-                [
-                    'amount' => 18000.00,
-                    'discount_amount' => 0.00,
-                    'final_amount' => 18000.00,
-                    'payment_method' => 'NEFT',
-                    'transaction_id' => 'BIO2025' . ($idx + 1),
-                    'payment_status' => 'success',
-                    'paid_at' => $pastDate->copy()->addMonths(4)->addDays(5),
-                    'created_at' => $pastDate->copy()->addMonths(4)->addDays(5),
-                ]
-            );
+        DB::table('referral_codes')->updateOrInsert(
+            ['code' => 'APEX15'],
+            [
+                'discount_type' => 'percentage',
+                'discount_value' => 15.00,
+                'is_client_specific' => 1,
+                'client_lab_id' => $labIds[0], // Apex Analytical Services
+                'is_one_time_use' => 1,
+                'expiry_date' => now()->addDays(60)->toDateString(),
+                'is_used' => 0,
+                'created_by' => $admin->admin_id,
+                'created_at' => now(),
+            ]
+        );
 
-            $sBioCode = 'PT-BIO-2025-0' . ($idx + 1);
-            DB::table('samples')->updateOrInsert(
-                ['sample_code' => $sBioCode],
-                [
-                    'program_id' => $progBioId,
-                    'registration_id' => $rBioId,
-                    'batch_id' => $batch1Id,
-                    'qr_code' => 'QR-' . $sBioCode,
-                    'status' => 'dispatched',
-                    'created_at' => $pastDate->copy()->addMonths(4)->addDays(15),
-                ]
-            );
-            $sBioId = DB::table('samples')->where('sample_code', $sBioCode)->value('sample_id');
-
-            DB::table('dispatches')->updateOrInsert(
-                ['sample_id' => $sBioId],
-                [
-                    'dispatch_date' => $pastDate->copy()->addMonths(4)->addDays(16)->toDateString(),
-                    'courier_name' => 'DTDC Courier',
-                    'tracking_number' => 'DT-BIO-00' . ($idx + 1),
-                    'dispatched_by' => $admin->admin_id,
-                    'notification_sent' => 1,
-                    'notification_sent_at' => $pastDate->copy()->addMonths(4)->addDays(16),
-                    'created_at' => $pastDate->copy()->addMonths(4)->addDays(16),
-                ]
-            );
-
-            DB::table('observations')->insert([
-                'sample_id' => $sBioId,
-                'registration_id' => $rBioId,
-                'lab_id' => $lId,
-                'parameter_id' => $paramTpc,
-                'test_method' => 'IS 5402',
-                'result_value' => $bioTpcResults[$idx],
-                'unit' => 'CFU/g',
-                'remarks' => 'Bio evaluation completed.',
-                'is_locked' => 1,
-                'submitted_at' => $pastDate->copy()->addMonths(4)->addDays(25),
-                'created_at' => $pastDate->copy()->addMonths(4)->addDays(25),
-                'updated_at' => $pastDate->copy()->addMonths(4)->addDays(25),
-            ]);
-        }
+        DB::table('referral_codes')->updateOrInsert(
+            ['code' => 'FLAT1000'],
+            [
+                'discount_type' => 'fixed',
+                'discount_value' => 1000.00,
+                'is_client_specific' => 0,
+                'client_lab_id' => null,
+                'is_one_time_use' => 1,
+                'expiry_date' => null,
+                'is_used' => 0,
+                'created_by' => $admin->admin_id,
+                'created_at' => now(),
+            ]
+        );
     }
 }

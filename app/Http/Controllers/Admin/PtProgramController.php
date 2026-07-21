@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\PtProgram;
 use App\Models\ProgramParameter;
+use App\Models\Observation;
+use App\Services\StatsCalculatorService;
+use App\Http\Controllers\Admin\StatisticalEngineController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -151,21 +154,31 @@ class PtProgramController extends Controller
                 'program_status' => $validated['program_status'],
             ]);
 
-            // Sync Parameters: remove old and insert updated ones
-            ProgramParameter::where('program_id', $program->program_id)->delete();
+            // Sync Parameters: remove old and insert updated ones if observations don't exist
+            $hasObservations = Observation::whereIn('parameter_id', ProgramParameter::where('program_id', $program->program_id)->pluck('parameter_id'))->exists();
 
-            foreach ($validated['parameters'] as $paramData) {
-                if (!empty($paramData['parameter_name'])) {
-                    ProgramParameter::create([
-                        'program_id' => $program->program_id,
-                        'parameter_name' => $paramData['parameter_name'],
-                        'test_method' => $paramData['test_method'] ?? null,
-                        'unit' => $paramData['unit'] ?? null,
-                        'created_at' => now(),
-                    ]);
+            if (!$hasObservations) {
+                ProgramParameter::where('program_id', $program->program_id)->delete();
+
+                foreach ($validated['parameters'] as $paramData) {
+                    if (!empty($paramData['parameter_name'])) {
+                        ProgramParameter::create([
+                            'program_id' => $program->program_id,
+                            'parameter_name' => $paramData['parameter_name'],
+                            'test_method' => $paramData['test_method'] ?? null,
+                            'unit' => $paramData['unit'] ?? null,
+                            'created_at' => now(),
+                        ]);
+                    }
                 }
             }
         });
+
+        // Auto-freeze statistics and lock tables if program status is closed or completed
+        if (in_array($validated['program_status'], ['closed', 'completed'])) {
+            $statsEngine = new StatisticalEngineController(new StatsCalculatorService());
+            $statsEngine->freezeSchemeStats($program->program_id);
+        }
 
         return redirect()->route('admin.programs.index')->with('success', 'PT Program updated successfully!');
     }

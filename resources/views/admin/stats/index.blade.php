@@ -40,7 +40,19 @@
                         <span class="badge bg-primary me-2">{{ $program->program_code }}</span>
                         <span class="fw-bold text-dark fs-6">{{ $program->program_name }}</span>
                     </div>
-                    <span class="badge bg-light text-dark border">{{ $program->parameters->count() }} Parameters</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-light text-dark border">{{ $program->parameters->count() }} Parameters</span>
+                        @if($program->program_status === 'completed')
+                            <span class="badge bg-success py-2 px-3"><i class="bx bx-lock-alt me-1"></i> Frozen & Locked into DB</span>
+                        @else
+                            <form action="{{ route('admin.stats.freeze', $program->program_id) }}" method="POST" onsubmit="return confirm('Freezing this scheme will calculate ISO 13528 Robust Mean & SD, lock all observations, populate statistical_results & reports tables, and complete the scheme. Proceed?');">
+                                @csrf
+                                <button type="submit" class="btn btn-warning btn-sm text-dark fw-bold shadow-sm">
+                                    <i class="bx bx-lock-alt me-1"></i> Freeze & Lock Scheme Evaluation
+                                </button>
+                            </form>
+                        @endif
+                    </div>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">

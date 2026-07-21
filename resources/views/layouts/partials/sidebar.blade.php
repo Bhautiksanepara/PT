@@ -75,6 +75,13 @@
             </a>
         </li>
 
+        <li class="{{ request()->routeIs('admin.referrals.*') ? 'active' : '' }}">
+            <a href="{{ route('admin.referrals.index') }}">
+                <i class="bx bx-purchase-tag-alt"></i>
+                <span>Referral Codes</span>
+            </a>
+        </li>
+
         <li class="{{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
             <a href="{{ route('admin.reports.index') }}">
                 <i class="bx bx-award"></i>
