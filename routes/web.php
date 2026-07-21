@@ -18,6 +18,8 @@ use App\Http\Controllers\User\UserAuthController;
 use App\Http\Controllers\User\UserDashboardController;
 use App\Http\Controllers\User\UserProgramRegistrationController;
 use App\Http\Controllers\User\UserReportController;
+use App\Http\Controllers\User\UserDispatchController;
+use App\Http\Controllers\User\UserObservationController;
 
 // User / Participant Portal Guest Routes (Registration & Login)
 Route::middleware('guest:lab')->group(function () {
@@ -36,6 +38,21 @@ Route::middleware('auth:lab')->group(function () {
     Route::post('/logout', [UserAuthController::class, 'logout'])->name('user.logout');
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('user.dashboard');
 
+    // Phase 5: Sample Dispatch Tracking & Confirmation Page
+    Route::get('/dispatches', [UserDispatchController::class, 'index'])->name('user.dispatches.index');
+    Route::post('/dispatches/{registration}/confirm-receipt', [UserDispatchController::class, 'confirmReceipt'])->name('user.dispatches.confirm');
+    Route::get('/dispatches/{registration}/slip', [UserDispatchController::class, 'viewPackingSlip'])->name('user.dispatches.slip');
+
+    // Phase 6: Observation Submission Module
+    Route::get('/observations', [UserObservationController::class, 'index'])->name('user.observations.index');
+    Route::get('/observations/{registration}', [UserObservationController::class, 'showForm'])->name('user.observations.form');
+    Route::post('/observations/{registration}', [UserObservationController::class, 'store'])->name('user.observations.store');
+
+    // Aliases for compatibility
+    Route::get('/lab/observations', [UserObservationController::class, 'index'])->name('lab.observations.index');
+    Route::get('/lab/observations/{registration}', [UserObservationController::class, 'showForm'])->name('lab.observations.form');
+    Route::post('/lab/observations/{registration}', [UserObservationController::class, 'store'])->name('lab.observations.store');
+
     // Phase 3: Program Registration, Referral System & Invoice
     Route::get('/programs/{program}/register', [UserProgramRegistrationController::class, 'showRegisterForm'])->name('user.program.register');
     Route::post('/programs/{program}/register', [UserProgramRegistrationController::class, 'submitRegistration'])->name('user.registration.submit');
@@ -43,7 +60,9 @@ Route::middleware('auth:lab')->group(function () {
     Route::post('/stripe/create-intent', [UserProgramRegistrationController::class, 'createStripeIntent'])->name('user.stripe.intent');
     Route::get('/registrations/{registration}/invoice', [UserProgramRegistrationController::class, 'viewInvoice'])->name('user.invoice');
 
-    // User Dedicated PT Reports & Certificates
+    // User Dedicated PT Reports & Certificates Archive
+    Route::get('/reports', [UserReportController::class, 'index'])->name('user.reports.index');
+    Route::get('/lab/reports', [UserReportController::class, 'index'])->name('lab.reports.index');
     Route::get('/reports/individual/{program}/{registration}', [UserReportController::class, 'viewIndividualReport'])->name('user.reports.individual');
     Route::get('/reports/certificate/{program}/{registration}', [UserReportController::class, 'viewCertificate'])->name('user.reports.certificate');
 });

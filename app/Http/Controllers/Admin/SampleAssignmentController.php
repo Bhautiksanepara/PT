@@ -9,6 +9,7 @@ use App\Models\SampleBatch;
 use App\Models\ProgramRegistration;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class SampleAssignmentController extends Controller
 {

@@ -111,12 +111,54 @@
                             <td class="small text-muted">
                                 {{ $latestDispatch ? \Carbon\Carbon::parse($latestDispatch->dispatch_date)->format('d M Y') : 'N/A' }}
                             </td>
-                            <td class="text-end">
-                                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#dispatchModal{{ $sample->sample_id }}">
-                                    <i class="bx bx-edit me-1"></i> {{ $latestDispatch ? 'Update Dispatch' : 'Dispatch Sample' }}
-                                </button>
+                            <td class="text-end text-nowrap">
+                                <div class="d-inline-flex gap-2 align-items-center justify-content-end">
+                                    <button type="button" class="btn btn-outline-dark btn-sm" data-bs-toggle="modal" data-bs-target="#adminQrModal{{ $sample->sample_id }}">
+                                        <i class="bx bx-qr-scan me-1"></i> QR Sticker
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#dispatchModal{{ $sample->sample_id }}">
+                                        <i class="bx bx-edit me-1"></i> {{ $latestDispatch ? 'Update Dispatch' : 'Dispatch Sample' }}
+                                    </button>
+                                </div>
 
-                                <!-- Modal -->
+                                <!-- Admin QR Code Sticker Modal -->
+                                <div class="modal fade text-start" id="adminQrModal{{ $sample->sample_id }}" tabindex="-1">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-dark text-white py-3">
+                                                <h6 class="modal-title fw-bold text-white mb-0"><i class="bx bx-qr-scan text-primary me-1"></i> Printable Sample Bottle QR Sticker</h6>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body text-center p-4" id="adminPrintableQr{{ $sample->sample_id }}">
+                                                @php
+                                                    $labName = $sample->registration->lab->laboratory_name ?? 'Laboratory';
+                                                    $qrPayload = "SAMPLE ID: {$sample->sample_code}\nPROGRAM: {$program->program_code}\nLAB: {$labName}\nQR: " . ($sample->qr_code ?? 'QR-PT');
+                                                @endphp
+
+                                                <div class="p-3 bg-light rounded border d-inline-block mb-3 shadow-sm">
+                                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data={{ urlencode($qrPayload) }}" alt="Sample QR Code" style="width: 160px; height: 160px;">
+                                                    <div class="mt-2 font-monospace fw-bold text-primary fs-5">{{ $sample->sample_code }}</div>
+                                                </div>
+
+                                                <div class="bg-light p-3 rounded border text-start mb-2">
+                                                    <div class="row g-2 small">
+                                                        <div class="col-6"><span class="text-muted d-block">Program Code:</span> <strong>{{ $program->program_code }}</strong></div>
+                                                        <div class="col-6"><span class="text-muted d-block">Sample Code:</span> <code class="fw-bold text-dark font-monospace">{{ $sample->sample_code }}</code></div>
+                                                        <div class="col-12 mt-2"><span class="text-muted d-block">Participant Lab:</span> <strong>{{ $labName }}</strong></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer bg-light py-2 justify-content-between">
+                                                <button type="button" class="btn btn-primary btn-sm" onclick="printAdminQr('adminPrintableQr{{ $sample->sample_id }}')">
+                                                    <i class="bx bx-printer me-1"></i> Print Bottle Sticker
+                                                </button>
+                                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Dispatch Modal -->
                                 <div class="modal fade text-start" id="dispatchModal{{ $sample->sample_id }}" tabindex="-1">
                                     <div class="modal-dialog">
                                         <div class="modal-content">
@@ -162,4 +204,15 @@
         </div>
     </div>
 </div>
+
+<script>
+function printAdminQr(elementId) {
+    var printContents = document.getElementById(elementId).innerHTML;
+    var originalContents = document.body.innerHTML;
+    document.body.innerHTML = '<div style="padding: 40px; text-align: center;">' + printContents + '</div>';
+    window.print();
+    document.body.innerHTML = originalContents;
+    window.location.reload();
+}
+</script>
 @endsection

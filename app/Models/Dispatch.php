@@ -18,6 +18,9 @@ class Dispatch extends Model
         'dispatched_by',
         'notification_sent',
         'notification_sent_at',
+        'received_at',
+        'arrival_condition',
+        'condition_notes',
         'created_at',
     ];
 

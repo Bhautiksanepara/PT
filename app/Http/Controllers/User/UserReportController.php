@@ -13,6 +13,42 @@ use Illuminate\Support\Facades\Auth;
 
 class UserReportController extends Controller
 {
+    public function index(Request $request)
+    {
+        $lab = Auth::guard('lab')->user();
+
+        $query = ProgramRegistration::with(['program', 'sample', 'observations'])
+            ->where('lab_id', $lab->lab_id);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('registration_number', 'like', "%{$search}%")
+                  ->orWhereHas('program', function ($pq) use ($search) {
+                      $pq->where('program_code', 'like', "%{$search}%")
+                        ->orWhere('program_name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('sample', function ($sq) use ($search) {
+                      $sq->where('sample_code', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->filled('year')) {
+            $query->whereYear('registered_at', $request->year);
+        }
+
+        $registrations = $query->orderBy('registered_at', 'desc')->paginate(10)->withQueryString();
+
+        $availableYears = ProgramRegistration::where('lab_id', $lab->lab_id)
+            ->selectRaw('YEAR(registered_at) as year')
+            ->distinct()
+            ->orderBy('year', 'desc')
+            ->pluck('year');
+
+        return view('user.reports.index', compact('lab', 'registrations', 'availableYears'));
+    }
+
     public function viewIndividualReport($program_id, $registration_id)
     {
         $lab = Auth::guard('lab')->user();
@@ -22,6 +58,16 @@ class UserReportController extends Controller
             ->findOrFail($registration_id);
 
         $program = PtProgram::with('parameters')->findOrFail($program_id);
+
+        // Enforce Admin Publish Check: Lock access until Admin publishes/freezes the program results
+        $hasReports = \Illuminate\Support\Facades\DB::table('reports')
+            ->where('program_id', $program->program_id)
+            ->where('registration_id', $registration->registration_id)
+            ->exists();
+
+        if ($program->program_status !== 'completed' && !$hasReports) {
+            return redirect()->route('lab.dashboard')->with('error', 'PT evaluation results and reports for this program have not been published by the Admin yet.');
+        }
 
         $observations = Observation::with('parameter')
             ->where('registration_id', $registration->registration_id)
@@ -108,6 +154,15 @@ class UserReportController extends Controller
             ->findOrFail($registration_id);
 
         $program = PtProgram::findOrFail($program_id);
+
+        $hasReports = \Illuminate\Support\Facades\DB::table('reports')
+            ->where('program_id', $program->program_id)
+            ->where('registration_id', $registration->registration_id)
+            ->exists();
+
+        if ($program->program_status !== 'completed' && !$hasReports) {
+            return redirect()->route('lab.dashboard')->with('error', 'Participation Certificate for this program has not been published by the Admin yet.');
+        }
 
         return view('user.reports.certificate', compact('program', 'registration', 'lab'));
     }

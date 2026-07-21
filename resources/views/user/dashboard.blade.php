@@ -207,7 +207,7 @@
                                                     <h6 class="modal-title fw-bold text-white mb-0"><i class="bx bx-package text-info me-1"></i> Sample Shipment & QR Code Receipt</h6>
                                                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                                 </div>
-                                                <div class="modal-body text-center p-4">
+                                                <div class="modal-body text-center p-4" id="printableDashQr{{ $reg->registration_id }}">
                                                     @php
                                                         $sampleCode = $reg->sample->sample_code ?? 'N/A';
                                                         $courier = $reg->sample->dispatch->courier_name ?? 'Courier Service';
@@ -232,7 +232,10 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div class="modal-footer bg-light py-2">
+                                                <div class="modal-footer bg-light py-2 justify-content-between">
+                                                    <button type="button" class="btn btn-outline-dark btn-sm" onclick="printDashQr('printableDashQr{{ $reg->registration_id }}')">
+                                                        <i class="bx bx-printer me-1"></i> Print QR Slip
+                                                    </button>
                                                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
                                                 </div>
                                             </div>
@@ -243,10 +246,18 @@
                                 @endif
                             </td>
                             <td>
-                                @if($reg->observations->count() > 0)
-                                    <span class="badge badge-soft-success"><i class="bx bx-file-find me-1"></i> {{ $reg->observations->count() }} Results Submitted</span>
+                                @if($reg->sample)
+                                    @if($reg->observations->count() > 0)
+                                        <a href="{{ route('user.observations.form', $reg->registration_id) }}" class="btn btn-sm btn-soft-success p-1 px-2 border-0 fw-semibold" title="Click to view/edit submitted observations">
+                                            <i class="bx bx-file-find me-1"></i> {{ $reg->observations->count() }} Results Saved <i class="bx bx-edit-alt ms-1"></i>
+                                        </a>
+                                    @else
+                                        <a href="{{ route('user.observations.form', $reg->registration_id) }}" class="btn btn-sm btn-soft-warning p-1 px-2 border-0 fw-semibold" title="Click to enter test parameters">
+                                            <i class="bx bx-vial me-1"></i> Enter Results <i class="bx bx-right-arrow-alt ms-1"></i>
+                                        </a>
+                                    @endif
                                 @else
-                                    <span class="badge bg-light text-muted border">Awaiting Results</span>
+                                    <span class="badge bg-light text-muted border">Awaiting Sample</span>
                                 @endif
                             </td>
                             <td class="text-end">
@@ -255,7 +266,15 @@
                                         <i class="bx bx-receipt me-1"></i> Tax Invoice
                                     </a>
 
-                                    @if($reg->reports->count() > 0 || $reg->observations->count() > 0)
+                                    @php
+                                        $hasReports = \Illuminate\Support\Facades\DB::table('reports')
+                                            ->where('program_id', $reg->program_id)
+                                            ->where('registration_id', $reg->registration_id)
+                                            ->exists() || ($reg->reports->count() > 0);
+                                        $isPublished = ($reg->program->program_status === 'completed') && $hasReports;
+                                    @endphp
+
+                                    @if($isPublished)
                                         <a href="{{ route('user.reports.individual', [$reg->program_id, $reg->registration_id]) }}" class="btn btn-sm btn-outline-primary text-nowrap" target="_blank" title="View Official PT Evaluation Report">
                                             <i class="bx bx-file me-1"></i> PT Report
                                         </a>
@@ -263,10 +282,10 @@
                                             <i class="bx bx-award me-1"></i> Certificate
                                         </a>
                                     @else
-                                        <button class="btn btn-sm btn-outline-secondary text-nowrap opacity-50" disabled title="Report will be unlocked after testing & evaluation completion">
+                                        <button class="btn btn-sm btn-outline-secondary text-nowrap opacity-50" disabled title="Reports & Certificates will be unlocked once Admin publishes final results">
                                             <i class="bx bx-lock-alt me-1"></i> PT Report
                                         </button>
-                                        <button class="btn btn-sm btn-outline-secondary text-nowrap opacity-50" disabled title="Certificate will be unlocked after testing & evaluation completion">
+                                        <button class="btn btn-sm btn-outline-secondary text-nowrap opacity-50" disabled title="Reports & Certificates will be unlocked once Admin publishes final results">
                                             <i class="bx bx-lock-alt me-1"></i> Certificate
                                         </button>
                                     @endif
@@ -285,4 +304,15 @@
         </div>
     </div>
 </div>
+
+<script>
+function printDashQr(elementId) {
+    var printContents = document.getElementById(elementId).innerHTML;
+    var originalContents = document.body.innerHTML;
+    document.body.innerHTML = '<div style="padding: 40px; text-align: center;">' + printContents + '</div>';
+    window.print();
+    document.body.innerHTML = originalContents;
+    window.location.reload();
+}
+</script>
 @endsection

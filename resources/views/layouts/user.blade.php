@@ -93,6 +93,21 @@
                                 <i class="bx bx-grid-alt me-1"></i> Dashboard
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white fw-semibold {{ request()->routeIs('user.dispatches.*') ? 'active border-bottom border-primary border-2' : 'text-white-50' }}" href="{{ route('user.dispatches.index') }}">
+                                <i class="bx bx-package me-1"></i> Sample Dispatches
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white fw-semibold {{ request()->routeIs('user.observations.*') || request()->routeIs('lab.observations.*') ? 'active border-bottom border-primary border-2' : 'text-white-50' }}" href="{{ route('user.observations.index') }}">
+                                <i class="bx bx-vial me-1"></i> Test Observations
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white fw-semibold {{ request()->routeIs('user.reports.*') || request()->routeIs('lab.reports.*') ? 'active border-bottom border-primary border-2' : 'text-white-50' }}" href="{{ route('user.reports.index') }}">
+                                <i class="bx bx-award me-1"></i> Reports & Certs
+                            </a>
+                        </li>
                     </ul>
 
                     <div class="d-flex align-items-center gap-3">

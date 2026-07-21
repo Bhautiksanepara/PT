@@ -8,6 +8,26 @@
         <h4 class="fw-bold mb-1">Sample Assignment & Traceability</h4>
         <p class="text-muted small mb-0">Trace auto-generated sample IDs (`PT-2026-001`), production batches, and participant labs</p>
     </div>
+    <div>
+        @if($programs->isNotEmpty())
+            <div class="dropdown">
+                <button class="btn btn-primary btn-sm dropdown-toggle fw-semibold shadow-sm" type="button" data-bs-toggle="dropdown">
+                    <i class="bx bx-bolt me-1"></i> Assign Program Samples
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow">
+                    <li class="dropdown-header text-uppercase small fw-bold">Select Program to Assign Samples</li>
+                    @foreach($programs as $prog)
+                        <li>
+                            <a class="dropdown-item d-flex justify-content-between align-items-center" href="{{ route('admin.samples.program', $prog->program_id) }}">
+                                <span><i class="bx bx-layer me-2 text-primary"></i>{{ $prog->program_code }}</span>
+                                <small class="text-muted ms-2">{{ $prog->program_name }}</small>
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+    </div>
 </div>
 
 <!-- Search & Filter Bar -->

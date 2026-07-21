@@ -17,6 +17,7 @@ class Observation extends Model
         'test_method',
         'result_value',
         'unit',
+        'uncertainty',
         'remarks',
         'is_locked',
         'submitted_at',
