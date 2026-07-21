@@ -56,9 +56,15 @@
         <a href="{{ route('admin.reports.individual', [$program->program_id, $registration->registration_id]) }}" class="btn btn-outline-primary btn-sm">
             <i class="bx bx-file me-1"></i> View PT Evaluation Report
         </a>
-        <a href="{{ route('admin.reports.index') }}" class="btn btn-outline-secondary btn-sm">
-            <i class="bx bx-arrow-back me-1"></i> Back to Directory
-        </a>
+        @if(Auth::guard('lab')->check())
+            <a href="{{ route('user.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bx bx-arrow-back me-1"></i> Back to Dashboard
+            </a>
+        @else
+            <a href="{{ route('admin.reports.index') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bx bx-arrow-back me-1"></i> Back to Directory
+            </a>
+        @endif
     </div>
 </div>
 

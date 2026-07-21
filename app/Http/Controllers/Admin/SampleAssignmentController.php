@@ -8,7 +8,7 @@ use App\Models\PtProgram;
 use App\Models\SampleBatch;
 use App\Models\ProgramRegistration;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class SampleAssignmentController extends Controller
 {
@@ -57,7 +57,18 @@ class SampleAssignmentController extends Controller
             ->get()
             ->keyBy('registration_id');
 
-        return view('admin.samples.program', compact('program', 'approvedBatches', 'allBatches', 'assignedSamples'));
+        $currentYear = date('Y');
+        $latestSample = Sample::where('sample_code', 'like', "PT-{$currentYear}-%")
+            ->orderBy('sample_id', 'desc')
+            ->first();
+
+        $nextSeq = 1;
+        if ($latestSample && preg_match('/PT-\d{4}-(\d+)/', $latestSample->sample_code, $matches)) {
+            $nextSeq = (int)$matches[1] + 1;
+        }
+        $nextSampleCode = 'PT-' . $currentYear . '-' . str_pad($nextSeq, 3, '0', STR_PAD_LEFT);
+
+        return view('admin.samples.program', compact('program', 'approvedBatches', 'allBatches', 'assignedSamples', 'nextSampleCode'));
     }
 
     public function bulkAssign(Request $request, $program_id)
@@ -121,26 +132,50 @@ class SampleAssignmentController extends Controller
 
     public function assignSingle(Request $request)
     {
+        $existingSample = Sample::where('registration_id', $request->registration_id)->first();
+        $sampleCodeRule = Rule::unique('samples', 'sample_code');
+        if ($existingSample) {
+            $sampleCodeRule->ignore($existingSample->sample_id, 'sample_id');
+        }
+
         $validated = $request->validate([
             'registration_id' => 'required|exists:program_registrations,registration_id',
-            'batch_id' => 'required|exists:sample_batches,batch_id',
-            'sample_code' => 'required|string|max:50',
+            'batch_id' => 'nullable|exists:sample_batches,batch_id',
+            'sample_code' => ['required', 'string', 'max:50', $sampleCodeRule],
+        ], [
+            'sample_code.unique' => "Sample code '{$request->sample_code}' is already assigned to another laboratory. Please use a unique sample code.",
         ]);
 
-        $reg = ProgramRegistration::findOrFail($validated['registration_id']);
+        $reg = ProgramRegistration::with('program')->findOrFail($validated['registration_id']);
+
+        $batchId = $validated['batch_id'] ?? null;
+        if (!$batchId) {
+            $defaultBatch = SampleBatch::firstOrCreate(
+                ['program_id' => $reg->program_id, 'batch_number' => 'BATCH-' . $reg->program->program_code . '-01'],
+                [
+                    'material' => 'Standard PT Reference Sample',
+                    'quantity_produced' => 100,
+                    'unit' => 'Units',
+                    'status' => 'approved',
+                    'prepared_by' => auth()->id() ?? 1,
+                    'created_at' => now(),
+                ]
+            );
+            $batchId = $defaultBatch->batch_id;
+        }
 
         Sample::updateOrCreate(
             ['registration_id' => $reg->registration_id],
             [
                 'sample_code' => $validated['sample_code'],
                 'program_id' => $reg->program_id,
-                'batch_id' => $validated['batch_id'],
+                'batch_id' => $batchId,
                 'qr_code' => 'QR-' . $validated['sample_code'],
                 'status' => 'pending',
                 'created_at' => now(),
             ]
         );
 
-        return back()->with('success', "Sample code {$validated['sample_code']} assigned successfully!");
+        return back()->with('success', "Sample code {$validated['sample_code']} assigned to {$reg->lab->laboratory_name} successfully!");
     }
 }

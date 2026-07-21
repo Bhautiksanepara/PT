@@ -113,7 +113,9 @@
                                     <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                                         <li><a class="dropdown-item" href="{{ route('admin.programs.show', $program->program_id) }}"><i class="bx bx-show me-2 text-info"></i> View Details</a></li>
                                         <li><a class="dropdown-item" href="{{ route('admin.plans.show', $program->program_id) }}"><i class="bx bx-task me-2 text-success"></i> Official PT Plan</a></li>
-                                        <li><a class="dropdown-item" href="{{ route('admin.programs.edit', $program->program_id) }}"><i class="bx bx-edit me-2 text-primary"></i> Edit Program</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.samples.program', $program->program_id) }}"><i class="bx bx-barcode me-2 text-warning"></i> Assign Samples</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.dispatches.program', $program->program_id) }}"><i class="bx bx-package me-2 text-primary"></i> Dispatch Samples</a></li>
+                                        <li><a class="dropdown-item" href="{{ route('admin.programs.edit', $program->program_id) }}"><i class="bx bx-edit me-2 text-secondary"></i> Edit Program</a></li>
                                         <li><hr class="dropdown-divider"></li>
                                         <li>
                                             <form action="{{ route('admin.programs.toggle-window', $program->program_id) }}" method="POST">
