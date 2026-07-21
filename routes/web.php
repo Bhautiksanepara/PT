@@ -14,10 +14,43 @@ use App\Http\Controllers\Admin\StatisticalEngineController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ArchiveController;
 use App\Http\Controllers\Admin\ReferralCodeController;
+use App\Http\Controllers\User\UserAuthController;
+use App\Http\Controllers\User\UserDashboardController;
+use App\Http\Controllers\User\UserProgramRegistrationController;
+use App\Http\Controllers\User\UserReportController;
 
-// Redirect root URL to Admin Login / Dashboard
+// User / Participant Portal Guest Routes (Registration & Login)
+Route::middleware('guest:lab')->group(function () {
+    Route::get('/register', [UserAuthController::class, 'showRegisterForm'])->name('user.register');
+    Route::post('/register', [UserAuthController::class, 'register'])->name('user.register.submit');
+    Route::get('/login', [UserAuthController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [UserAuthController::class, 'login'])->name('user.login.submit');
+});
+
+Route::get('/user/login', function() {
+    return redirect()->route('login');
+})->name('user.login');
+
+// User / Participant Protected Routes
+Route::middleware('auth:lab')->group(function () {
+    Route::post('/logout', [UserAuthController::class, 'logout'])->name('user.logout');
+    Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('user.dashboard');
+
+    // Phase 3: Program Registration, Referral System & Invoice
+    Route::get('/programs/{program}/register', [UserProgramRegistrationController::class, 'showRegisterForm'])->name('user.program.register');
+    Route::post('/programs/{program}/register', [UserProgramRegistrationController::class, 'submitRegistration'])->name('user.registration.submit');
+    Route::post('/referral/validate', [UserProgramRegistrationController::class, 'validateReferral'])->name('user.referral.validate');
+    Route::post('/stripe/create-intent', [UserProgramRegistrationController::class, 'createStripeIntent'])->name('user.stripe.intent');
+    Route::get('/registrations/{registration}/invoice', [UserProgramRegistrationController::class, 'viewInvoice'])->name('user.invoice');
+
+    // User Dedicated PT Reports & Certificates
+    Route::get('/reports/individual/{program}/{registration}', [UserReportController::class, 'viewIndividualReport'])->name('user.reports.individual');
+    Route::get('/reports/certificate/{program}/{registration}', [UserReportController::class, 'viewCertificate'])->name('user.reports.certificate');
+});
+
+// Redirect root URL to User Login
 Route::get('/', function () {
-    return redirect()->route('admin.dashboard');
+    return redirect()->route('user.login');
 });
 
 // Admin Guest Routes (Login Form & Submit)

@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
-class Lab extends Model
+class Lab extends Authenticatable
 {
+    use Notifiable;
+
     protected $table = 'labs';
     protected $primaryKey = 'lab_id';
 
@@ -31,6 +34,14 @@ class Lab extends Model
     protected $hidden = [
         'password_hash',
     ];
+
+    /**
+     * Override default password column name for Laravel Auth.
+     */
+    public function getAuthPassword()
+    {
+        return $this->password_hash;
+    }
 
     public function registrations()
     {

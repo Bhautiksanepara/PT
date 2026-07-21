@@ -30,9 +30,15 @@
         <a href="{{ route('admin.reports.certificate', [$program->program_id, $registration->registration_id]) }}" class="btn btn-success btn-sm">
             <i class="bx bx-award me-1"></i> View Certificate
         </a>
-        <a href="{{ route('admin.reports.index') }}" class="btn btn-outline-secondary btn-sm">
-            <i class="bx bx-arrow-back me-1"></i> Back to Reports
-        </a>
+        @if(Auth::guard('lab')->check())
+            <a href="{{ route('user.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bx bx-arrow-back me-1"></i> Back to Dashboard
+            </a>
+        @else
+            <a href="{{ route('admin.reports.index') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bx bx-arrow-back me-1"></i> Back to Reports
+            </a>
+        @endif
     </div>
 </div>
 

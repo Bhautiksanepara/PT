@@ -42,4 +42,14 @@ class ProgramRegistration extends Model
     {
         return $this->hasOne(Sample::class, 'registration_id', 'registration_id');
     }
+
+    public function observations()
+    {
+        return $this->hasMany(Observation::class, 'registration_id', 'registration_id');
+    }
+
+    public function reports()
+    {
+        return $this->hasMany(Report::class, 'registration_id', 'registration_id');
+    }
 }

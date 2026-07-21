@@ -8,10 +8,40 @@
         <h4 class="fw-bold mb-1">Dispatch Management — Master Sheet</h4>
         <p class="text-muted small mb-0">Track courier dispatches, tracking numbers, and notification status</p>
     </div>
-    <div>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-primary btn-sm shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#quickDispatchProgramModal">
+            <i class="bx bx-package me-1"></i> + New Dispatch by Program
+        </button>
         <a href="{{ route('admin.test-email') }}" class="btn btn-outline-primary btn-sm">
             <i class="bx bx-mail-send me-1"></i> Send Test Email
         </a>
+    </div>
+</div>
+
+<!-- Quick Program Dispatch Modal -->
+<div class="modal fade" id="quickDispatchProgramModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title fw-bold"><i class="bx bx-package text-primary me-1"></i> Select PT Program to Dispatch</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small">Choose an active PT program below to manage sample assignments, single dispatch, or bulk dispatch for registered labs.</p>
+                <div class="list-group">
+                    @forelse($programs as $prog)
+                        <a href="{{ route('admin.dispatches.program', $prog->program_id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="fw-bold text-primary">{{ $prog->program_code }}</span> — {{ $prog->program_name }}
+                            </div>
+                            <i class="bx bx-chevron-right text-muted"></i>
+                        </a>
+                    @empty
+                        <div class="text-center py-3 text-muted">No programs available.</div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

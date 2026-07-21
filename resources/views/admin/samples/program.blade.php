@@ -37,9 +37,9 @@
 
                     <div class="col-md-3 text-md-end">
                         @if($approvedBatches->isEmpty())
-                            <div class="alert alert-warning py-1 px-2 small mb-0">
-                                <i class="bx bx-info-circle"></i> Create & approve a production batch first.
-                            </div>
+                            <a href="{{ route('admin.batches.create_direct', ['program_id' => $program->program_id]) }}" class="btn btn-warning btn-sm w-100 py-2 fw-bold text-dark">
+                                <i class="bx bx-plus-circle me-1"></i> Create Production Batch
+                            </a>
                         @else
                             <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" onclick="return confirm('Auto-generate and assign sample codes for all confirmed registrations?')">
                                 <i class="bx bx-bolt me-1"></i> Bulk Auto-Assign Samples
@@ -130,18 +130,20 @@
                                                 <div class="modal-body">
                                                     <div class="mb-3">
                                                         <label class="form-label small fw-semibold">Sample Code <span class="text-danger">*</span></label>
-                                                        <input type="text" name="sample_code" class="form-control" value="{{ $sample->sample_code ?? 'PT-' . date('Y') . '-' . str_pad($loop->iteration, 3, '0', STR_PAD_LEFT) }}" required>
+                                                        <input type="text" name="sample_code" class="form-control font-monospace fw-bold" value="{{ $sample->sample_code ?? $nextSampleCode }}" required>
                                                     </div>
 
                                                     <div class="mb-3">
-                                                        <label class="form-label small fw-semibold">Production Batch <span class="text-danger">*</span></label>
-                                                        <select name="batch_id" class="form-select" required>
+                                                        <label class="form-label small fw-semibold">Production Batch</label>
+                                                        <select name="batch_id" class="form-select">
+                                                            <option value="">-- Auto-Generate Default Production Batch --</option>
                                                             @foreach($allBatches as $b)
                                                                 <option value="{{ $b->batch_id }}" {{ ($sample->batch_id ?? '') == $b->batch_id ? 'selected' : '' }}>
                                                                     {{ $b->batch_number }} ({{ ucfirst($b->status) }})
                                                                 </option>
                                                             @endforeach
                                                         </select>
+                                                        <small class="text-muted d-block mt-1">Select an existing production batch or leave as default.</small>
                                                     </div>
                                                 </div>
                                                 <div class="modal-footer">

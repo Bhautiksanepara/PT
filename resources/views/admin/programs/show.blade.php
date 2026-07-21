@@ -9,14 +9,20 @@
         <p class="text-muted small mb-0">{{ $program->program_name }}</p>
     </div>
     <div class="d-flex gap-2">
-        <a href="{{ route('admin.plans.show', $program->program_id) }}" class="btn btn-success btn-sm shadow-sm">
+        <a href="{{ route('admin.samples.program', $program->program_id) }}" class="btn btn-warning btn-sm shadow-sm text-dark fw-semibold">
+            <i class="bx bx-barcode me-1"></i> Assign Samples
+        </a>
+        <a href="{{ route('admin.dispatches.program', $program->program_id) }}" class="btn btn-primary btn-sm shadow-sm fw-semibold">
+            <i class="bx bx-package me-1"></i> Dispatch Samples
+        </a>
+        <a href="{{ route('admin.plans.show', $program->program_id) }}" class="btn btn-success btn-sm shadow-sm fw-semibold">
             <i class="bx bx-task me-1"></i> Official PT Plan
         </a>
-        <a href="{{ route('admin.programs.edit', $program->program_id) }}" class="btn btn-primary btn-sm">
-            <i class="bx bx-edit me-1"></i> Edit Program
+        <a href="{{ route('admin.programs.edit', $program->program_id) }}" class="btn btn-outline-primary btn-sm">
+            <i class="bx bx-edit me-1"></i> Edit
         </a>
         <a href="{{ route('admin.programs.index') }}" class="btn btn-outline-secondary btn-sm">
-            <i class="bx bx-arrow-back me-1"></i> Back to List
+            <i class="bx bx-arrow-back me-1"></i> Back
         </a>
     </div>
 </div>

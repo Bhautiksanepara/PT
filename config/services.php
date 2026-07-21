@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'stripe' => [
+        'key' => env('STRIPE_KEY', 'pk_test_51MzSampleTestPublicKeyForPTApp9988'),
+        'secret' => env('STRIPE_SECRET', 'sk_test_51MzSampleTestSecretKeyForPTApp9988'),
+    ],
+
 ];
