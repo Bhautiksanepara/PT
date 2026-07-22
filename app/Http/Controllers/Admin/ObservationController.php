@@ -39,7 +39,7 @@ class ObservationController extends Controller
             $query->where('parameter_id', $request->parameter_id);
         }
 
-        $observations = $query->orderBy('submitted_at', 'desc')->paginate(15)->withQueryString();
+        $observations = $query->orderBy('submitted_at', 'desc')->get();
         $programs = PtProgram::orderBy('program_code')->get();
 
         return view('admin.observations.index', compact('observations', 'programs'));
@@ -66,6 +66,7 @@ class ObservationController extends Controller
             'result_value' => 'required|string|max:100',
             'test_method'  => 'required|string|max:150',
             'unit'         => 'required|string|max:50',
+            'uncertainty'  => 'nullable|string|max:50',
             'remarks'      => 'nullable|string',
             'is_locked'    => 'required|boolean',
         ]);

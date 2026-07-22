@@ -56,6 +56,11 @@
                     </div>
 
                     <div class="col-md-6 border-top pt-3">
+                        <small class="text-muted d-block fw-semibold">Measurement Uncertainty (MU / ±)</small>
+                        <span class="fw-bold text-dark fs-5">{{ $observation->uncertainty ?: 'N/A' }}</span>
+                    </div>
+
+                    <div class="col-md-6 border-top pt-3">
                         <small class="text-muted d-block fw-semibold">Test Method Used</small>
                         <span class="badge bg-light text-dark border fs-6">{{ $observation->test_method }}</span>
                     </div>
@@ -138,6 +143,10 @@
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold">Unit <span class="text-danger">*</span></label>
                             <input type="text" name="unit" class="form-control" value="{{ old('unit', $observation->unit) }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Uncertainty (MU / ±)</label>
+                            <input type="text" name="uncertainty" class="form-control" value="{{ old('uncertainty', $observation->uncertainty) }}">
                         </div>
                         <div class="col-12">
                             <label class="form-label small fw-semibold">Test Method <span class="text-danger">*</span></label>

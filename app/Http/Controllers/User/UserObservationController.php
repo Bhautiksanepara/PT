@@ -153,8 +153,8 @@ class UserObservationController extends Controller
                 ]);
             }
 
-            // Update sample status to tested
-            $sample->update(['status' => 'tested']);
+            // Update sample status to received
+            $sample->update(['status' => 'received']);
         });
 
         return redirect()->route('user.observations.index')->with('success', 'Test observations and raw data sheets submitted successfully!');

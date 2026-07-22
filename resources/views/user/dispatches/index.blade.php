@@ -57,9 +57,9 @@
                         @php
                             $sample = $reg->sample;
                             $dispatch = $sample->dispatch ?? null;
-                            $isDispatched = $sample && in_array($sample->status, ['dispatched', 'received', 'tested']) && $dispatch;
-                            $isReceived = $sample && in_array($sample->status, ['received', 'tested']);
-                            $isTested = $sample && $sample->status === 'tested';
+                            $isDispatched = $sample && in_array($sample->status, ['dispatched', 'received']) && $dispatch;
+                            $isReceived = $sample && $sample->status === 'received';
+                            $isTested = $reg->observations->count() > 0;
                             $sampleCode = $sample->sample_code ?? 'N/A';
                             $courier = $dispatch->courier_name ?? 'N/A';
                             $tracking = $dispatch->tracking_number ?? 'N/A';
