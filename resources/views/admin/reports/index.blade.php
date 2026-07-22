@@ -42,20 +42,91 @@
 
 <!-- Programs Master Reports Banner -->
 <div class="card mb-4 bg-primary text-white shadow-sm">
-    <div class="card-body d-flex justify-content-between align-items-center py-3 flex-wrap gap-2">
+    <div class="card-body d-flex justify-content-between align-items-center py-3 flex-wrap gap-3">
         <div>
             <h6 class="fw-bold text-white mb-1"><i class="bx bx-table me-1"></i> Master Consolidated Z-Score Reports</h6>
-            <small class="text-white-50">View all participants vs all parameters in a single unified matrix report.</small>
+            <small class="text-white-50">Select a program to view all participants and parameters in a single unified matrix report.</small>
         </div>
-        <div class="d-flex gap-2 flex-wrap">
-            @foreach($programs as $prog)
-                <a href="{{ route('admin.reports.master', $prog->program_id) }}" class="btn btn-light btn-sm text-primary fw-bold shadow-sm">
-                    <i class="bx bx-file me-1"></i> Master Matrix: {{ $prog->program_code }}
-                </a>
-            @endforeach
+        
+        <div class="d-flex align-items-center gap-2" style="min-width: 380px; position: relative;">
+            <div class="flex-grow-1">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-white border-end-0 text-muted"><i class="bx bx-search"></i></span>
+                    <input type="text" id="masterReportSearch" class="form-control border-start-0 text-dark" placeholder="Quick search program..." onkeyup="filterMasterReports()">
+                </div>
+                <select id="masterReportSelect" class="form-select form-select-sm text-dark mt-1" style="max-height: 180px; position: absolute; left: 0; right: 0; z-index: 1050; display: none;" size="5">
+                    <option value="" disabled selected>-- Select Program --</option>
+                    @foreach($programs as $prog)
+                        <option value="{{ $prog->program_id }}" data-search="{{ strtolower($prog->program_code . ' ' . $prog->program_name) }}">
+                            {{ $prog->program_code }} - {{ $prog->program_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <button onclick="goToMasterReport()" class="btn btn-light btn-sm text-primary fw-bold text-nowrap">
+                <i class="bx bx-show me-1"></i> View Matrix
+            </button>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var searchInput = document.getElementById('masterReportSearch');
+    var select = document.getElementById('masterReportSelect');
+
+    if (searchInput && select) {
+        searchInput.addEventListener('focus', function() {
+            select.style.display = 'block';
+        });
+
+        document.addEventListener('click', function(e) {
+            if (e.target !== select && e.target !== searchInput && !select.contains(e.target)) {
+                select.style.display = 'none';
+            }
+        });
+
+        select.addEventListener('change', function() {
+            var selectedOption = select.options[select.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                searchInput.value = selectedOption.text;
+                select.style.display = 'none';
+            }
+        });
+    }
+});
+
+function filterMasterReports() {
+    var input = document.getElementById('masterReportSearch');
+    var filter = input.value.toLowerCase();
+    var select = document.getElementById('masterReportSelect');
+    var options = select.options;
+    
+    select.style.display = 'block';
+
+    for (var i = 0; i < options.length; i++) {
+        var opt = options[i];
+        if (opt.disabled) continue;
+        
+        var searchVal = opt.getAttribute('data-search') || '';
+        if (searchVal.indexOf(filter) > -1) {
+            opt.style.display = "";
+        } else {
+            opt.style.display = "none";
+        }
+    }
+}
+
+function goToMasterReport() {
+    var select = document.getElementById('masterReportSelect');
+    var programId = select.value;
+    if (!programId) {
+        alert('Please select a PT Program first.');
+        return;
+    }
+    window.location.href = "{{ url('admin/programs') }}/" + programId + "/master-report";
+}
+</script>
 
 <!-- Participant Registration Reports Table -->
 <div class="card">
@@ -113,11 +184,10 @@
             </table>
         </div>
     </div>
+    @if($registrations->hasPages())
+        <div class="card-footer bg-white py-3">
+            {{ $registrations->links() }}
+        </div>
+    @endif
 </div>
-
-@if($registrations->hasPages())
-    <div class="mt-4">
-        {{ $registrations->links() }}
-    </div>
-@endif
 @endsection

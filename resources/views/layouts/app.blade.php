@@ -290,6 +290,77 @@
     <!-- ApexCharts -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 1. Form Submission Disabling (Form submit buttons)
+            document.addEventListener('submit', function (event) {
+                var form = event.target;
+                if (form && form.tagName === 'FORM' && form.getAttribute('target') !== '_blank') {
+                    var submitButtons = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+                    submitButtons.forEach(function (btn) {
+                        btn.disabled = true;
+                        if (btn.tagName === 'BUTTON') {
+                            var originalHtml = btn.innerHTML;
+                            btn.setAttribute('data-original-html', originalHtml);
+                            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Processing...';
+                        }
+                    });
+
+                    // Fallback timeout to re-enable if page does not redirect/reload
+                    setTimeout(function() {
+                        submitButtons.forEach(function (btn) {
+                            btn.disabled = false;
+                            if (btn.tagName === 'BUTTON' && btn.getAttribute('data-original-html')) {
+                                btn.innerHTML = btn.getAttribute('data-original-html');
+                            }
+                        });
+                    }, 4000);
+                }
+            });
+
+            // 2. Direct Navigation Buttons (Link/Action buttons)
+            document.addEventListener('click', function (event) {
+                var btn = event.target.closest('.btn, button');
+                if (!btn) return;
+
+                // We only show "Loading..." for actual navigation link anchors
+                if (btn.tagName === 'A') {
+                    var href = btn.getAttribute('href');
+                    
+                    // Exclude modal/collapse toggles, anchor hash links, javascript scripts, or target blanks
+                    if (!href || href.startsWith('#') || href.startsWith('javascript:') || 
+                        btn.getAttribute('data-bs-toggle') || btn.getAttribute('data-bs-dismiss') || 
+                        btn.getAttribute('target') === '_blank' || btn.classList.contains('no-loader')) {
+                        return;
+                    }
+
+                    if (btn.classList.contains('clicked-loading')) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    btn.classList.add('clicked-loading');
+                    btn.classList.add('disabled');
+                    btn.style.pointerEvents = 'none';
+
+                    var originalHtml = btn.innerHTML;
+                    btn.setAttribute('data-original-html', originalHtml);
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Loading...';
+
+                    // Safety timeout to restore button state
+                    setTimeout(function() {
+                        btn.classList.remove('clicked-loading');
+                        btn.classList.remove('disabled');
+                        btn.style.pointerEvents = 'auto';
+                        if (btn.getAttribute('data-original-html')) {
+                            btn.innerHTML = btn.getAttribute('data-original-html');
+                        }
+                    }, 5000);
+                }
+            });
+        });
+    </script>
+
     @stack('scripts')
 </body>
 </html>

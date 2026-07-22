@@ -105,5 +105,11 @@
                 </tbody>
             </table>
         </div>
+    </div>
+    @if($observations->hasPages())
+        <div class="card-footer bg-white py-3">
+            {{ $observations->links() }}
+        </div>
+    @endif
 </div>
 @endsection

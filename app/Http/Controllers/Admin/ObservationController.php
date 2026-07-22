@@ -39,7 +39,7 @@ class ObservationController extends Controller
             $query->where('parameter_id', $request->parameter_id);
         }
 
-        $observations = $query->orderBy('submitted_at', 'desc')->get();
+        $observations = $query->orderBy('submitted_at', 'desc')->paginate(10)->withQueryString();
         $programs = PtProgram::orderBy('program_code')->get();
 
         return view('admin.observations.index', compact('observations', 'programs'));

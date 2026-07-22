@@ -38,7 +38,7 @@ class SampleAssignmentController extends Controller
             $query->where('status', $request->status);
         }
 
-        $samples = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
+        $samples = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
         $programs = PtProgram::orderBy('program_code')->get();
 
         return view('admin.samples.index', compact('samples', 'programs'));

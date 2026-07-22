@@ -33,7 +33,7 @@ class ArchiveController extends Controller
             $query->whereYear('created_at', $request->year);
         }
 
-        $programs = $query->orderBy('created_at', 'desc')->paginate(12)->withQueryString();
+        $programs = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
 
         // Available years for dropdown filter
         $availableYears = PtProgram::selectRaw('YEAR(created_at) as year')

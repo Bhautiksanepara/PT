@@ -58,7 +58,7 @@
 <!-- Programs Data Table -->
 <div class="card">
     <div class="card-body p-0">
-        <div class="table-responsive">
+        <div class="table-responsive" style="overflow: visible;">
             <table class="table align-middle mb-0">
                 <thead>
                     <tr>
@@ -107,7 +107,7 @@
                             </td>
                             <td class="text-end">
                                 <div class="dropdown">
-                                    <button class="btn btn-light btn-sm btn-icon rounded-circle" data-bs-toggle="dropdown">
+                                    <button class="btn btn-light btn-sm btn-icon rounded-circle" data-bs-toggle="dropdown" data-bs-boundary="viewport">
                                         <i class="bx bx-dots-vertical-rounded"></i>
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end shadow-sm">
@@ -147,7 +147,6 @@
                     @endforelse
                 </tbody>
             </table>
-        </div>
     </div>
     @if($programs->hasPages())
         <div class="card-footer bg-white py-3">

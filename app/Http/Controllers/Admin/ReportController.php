@@ -41,7 +41,7 @@ class ReportController extends Controller
             $query->where('program_id', $request->program_id);
         }
 
-        $registrations = $query->orderBy('registered_at', 'desc')->paginate(15)->withQueryString();
+        $registrations = $query->orderBy('registered_at', 'desc')->paginate(10)->withQueryString();
         $programs = PtProgram::orderBy('program_code')->get();
 
         return view('admin.reports.index', compact('registrations', 'programs'));

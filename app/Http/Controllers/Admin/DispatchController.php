@@ -40,7 +40,7 @@ class DispatchController extends Controller
             });
         }
 
-        $dispatches = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
+        $dispatches = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
         $programs = PtProgram::orderBy('program_code')->get();
 
         return view('admin.dispatches.index', compact('dispatches', 'programs'));

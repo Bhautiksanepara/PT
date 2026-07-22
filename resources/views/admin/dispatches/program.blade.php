@@ -89,7 +89,19 @@
                                 @if($sample->status === 'dispatched')
                                     <span class="badge badge-soft-info"><i class="bx bx-package me-1"></i> Dispatched</span>
                                 @elseif($sample->status === 'received')
-                                    <span class="badge badge-soft-success"><i class="bx bx-check-double me-1"></i> Received</span>
+                                    @if($latestDispatch && $latestDispatch->arrival_condition === 'damaged')
+                                        <span class="badge bg-danger text-white"><i class="bx bx-error me-1"></i> Received: Damaged</span>
+                                    @elseif($latestDispatch && $latestDispatch->arrival_condition === 'leaked')
+                                        <span class="badge bg-warning text-dark"><i class="bx bx-droplet me-1"></i> Received: Leaked</span>
+                                    @else
+                                        <span class="badge badge-soft-success"><i class="bx bx-check-double me-1"></i> Received: Intact</span>
+                                    @endif
+
+                                    @if($latestDispatch && $latestDispatch->condition_notes)
+                                        <div class="mt-1 small text-muted font-monospace" style="font-size: 10px; max-width: 180px; word-wrap: break-word;" title="Condition Notes: {{ $latestDispatch->condition_notes }}">
+                                            Note: "{{ Str::limit($latestDispatch->condition_notes, 40) }}"
+                                        </div>
+                                    @endif
                                 @else
                                     <span class="badge badge-soft-warning"><i class="bx bx-time me-1"></i> Pending</span>
                                 @endif
@@ -173,7 +185,13 @@
                                                 <div class="modal-body">
                                                     <div class="mb-3">
                                                         <label class="form-label small fw-semibold">Courier Partner <span class="text-danger">*</span></label>
-                                                        <input type="text" name="courier_name" class="form-control" value="{{ $latestDispatch->courier_name ?? 'BlueDart Express' }}" required>
+                                                        <select name="courier_name" class="form-select" required>
+                                                            <option value="BlueDart Express" {{ (old('courier_name', $latestDispatch->courier_name ?? 'BlueDart Express') === 'BlueDart Express') ? 'selected' : '' }}>BlueDart Express</option>
+                                                            <option value="DTDC Courier" {{ (old('courier_name', $latestDispatch->courier_name ?? '') === 'DTDC Courier') ? 'selected' : '' }}>DTDC Courier</option>
+                                                            <option value="FedEx India" {{ (old('courier_name', $latestDispatch->courier_name ?? '') === 'FedEx India') ? 'selected' : '' }}>FedEx India</option>
+                                                            <option value="India Post Speed Post" {{ (old('courier_name', $latestDispatch->courier_name ?? '') === 'India Post Speed Post') ? 'selected' : '' }}>India Post Speed Post</option>
+                                                            <option value="Delhivery" {{ (old('courier_name', $latestDispatch->courier_name ?? '') === 'Delhivery') ? 'selected' : '' }}>Delhivery</option>
+                                                        </select>
                                                     </div>
 
                                                     <div class="mb-3">

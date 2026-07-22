@@ -12,9 +12,6 @@
         <button type="button" class="btn btn-primary btn-sm shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#quickDispatchProgramModal">
             <i class="bx bx-package me-1"></i> + New Dispatch by Program
         </button>
-        <a href="{{ route('admin.test-email') }}" class="btn btn-outline-primary btn-sm">
-            <i class="bx bx-mail-send me-1"></i> Send Test Email
-        </a>
     </div>
 </div>
 
@@ -28,9 +25,15 @@
             </div>
             <div class="modal-body">
                 <p class="text-muted small">Choose an active PT program below to manage sample assignments, single dispatch, or bulk dispatch for registered labs.</p>
-                <div class="list-group">
+                <div class="mb-3">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-end-0"><i class="bx bx-search"></i></span>
+                        <input type="text" id="modalSearchInput" class="form-control border-start-0" placeholder="Search program by code or name..." onkeyup="filterModalPrograms()">
+                    </div>
+                </div>
+                <div class="list-group" style="max-height: 280px; overflow-y: auto;">
                     @forelse($programs as $prog)
-                        <a href="{{ route('admin.dispatches.program', $prog->program_id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <a href="{{ route('admin.dispatches.program', $prog->program_id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center dispatch-modal-item" data-search="{{ strtolower($prog->program_code . ' ' . $prog->program_name) }}">
                             <div>
                                 <span class="fw-bold text-primary">{{ $prog->program_code }}</span> — {{ $prog->program_name }}
                             </div>
@@ -190,7 +193,6 @@
                     @endforelse
                 </tbody>
             </table>
-        </div>
     </div>
     @if($dispatches->hasPages())
         <div class="card-footer bg-white py-3">
@@ -207,6 +209,21 @@ function printMasterAdminQr(elementId) {
     window.print();
     document.body.innerHTML = originalContents;
     window.location.reload();
+}
+
+function filterModalPrograms() {
+    var input = document.getElementById('modalSearchInput');
+    var filter = input.value.toLowerCase();
+    var items = document.querySelectorAll('.dispatch-modal-item');
+
+    items.forEach(function(item) {
+        var text = item.getAttribute('data-search') || '';
+        if (text.indexOf(filter) > -1) {
+            item.style.display = "";
+        } else {
+            item.style.display = "none";
+        }
+    });
 }
 </script>
 @endsection

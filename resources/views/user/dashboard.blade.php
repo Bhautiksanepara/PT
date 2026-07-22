@@ -192,55 +192,58 @@
                                 @else
                                     <span class="badge badge-soft-warning">Payment Pending</span>
                                 @endif
-                            </td>
-                            <td>
-                                @if($reg->sample && $reg->sample->status === 'dispatched' && $reg->sample->dispatch)
-                                    <button type="button" class="btn btn-sm btn-soft-info p-1 px-2 border-0 fw-semibold" data-bs-toggle="modal" data-bs-target="#trackingModal{{ $reg->registration_id }}" title="Click to view tracking details & QR code">
-                                        <i class="bx bx-package me-1"></i> Dispatched ({{ $reg->sample->dispatch->courier_name }}) <i class="bx bx-qr-scan ms-1"></i>
-                                    </button>
+                                                         <td>
+                                @if($reg->sample && $reg->sample->dispatch)
+                                    @if($reg->sample->status === 'received')
+                                        <span class="badge badge-soft-success"><i class="bx bx-check-double me-1"></i> Received at Lab</span>
+                                    @else
+                                        <button type="button" class="btn btn-sm btn-soft-info p-1 px-2 border-0 fw-semibold" data-bs-toggle="modal" data-bs-target="#trackingModal{{ $reg->registration_id }}" title="Click to view tracking details & QR code">
+                                            <i class="bx bx-package me-1"></i> Dispatched ({{ $reg->sample->dispatch->courier_name }}) <i class="bx bx-qr-scan ms-1"></i>
+                                        </button>
 
-                                    <!-- Tracking & QR Code Modal -->
-                                    <div class="modal fade text-start" id="trackingModal{{ $reg->registration_id }}" tabindex="-1">
-                                        <div class="modal-dialog modal-dialog-centered">
-                                            <div class="modal-content">
-                                                <div class="modal-header bg-dark text-white py-3">
-                                                    <h6 class="modal-title fw-bold text-white mb-0"><i class="bx bx-package text-info me-1"></i> Sample Shipment & QR Code Receipt</h6>
-                                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                                </div>
-                                                <div class="modal-body text-center p-4" id="printableDashQr{{ $reg->registration_id }}">
-                                                    @php
-                                                        $sampleCode = $reg->sample->sample_code ?? 'N/A';
-                                                        $courier = $reg->sample->dispatch->courier_name ?? 'Courier Service';
-                                                        $tracking = $reg->sample->dispatch->tracking_number ?? 'N/A';
-                                                        $dispatchDate = \Carbon\Carbon::parse($reg->sample->dispatch->dispatch_date)->format('d M Y');
-                                                        $qrPayload = "SAMPLE ID: {$sampleCode}\nPROGRAM: {$reg->program->program_code}\nCOURIER: {$courier}\nTRACKING #: {$tracking}\nDISPATCH DATE: {$dispatchDate}\nLABORATORY: {$lab->laboratory_name}";
-                                                    @endphp
-
-                                                    <div class="p-3 bg-light rounded border d-inline-block mb-3 shadow-sm">
-                                                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data={{ urlencode($qrPayload) }}" alt="Sample QR Code" style="width: 160px; height: 160px;">
-                                                        <div class="mt-2 font-monospace fw-bold text-primary fs-6">{{ $sampleCode }}</div>
+                                        <!-- Tracking & QR Code Modal -->
+                                        <div class="modal fade text-start" id="trackingModal{{ $reg->registration_id }}" tabindex="-1">
+                                            <div class="modal-dialog modal-dialog-centered">
+                                                <div class="modal-content">
+                                                    <div class="modal-header bg-dark text-white py-3">
+                                                        <h6 class="modal-title fw-bold text-white mb-0"><i class="bx bx-package text-info me-1"></i> Sample Shipment & QR Code Receipt</h6>
+                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                                     </div>
+                                                    <div class="modal-body text-center p-4" id="printableDashQr{{ $reg->registration_id }}">
+                                                        @php
+                                                            $sampleCode = $reg->sample->sample_code ?? 'N/A';
+                                                            $courier = $reg->sample->dispatch->courier_name ?? 'Courier Service';
+                                                            $tracking = $reg->sample->dispatch->tracking_number ?? 'N/A';
+                                                            $dispatchDate = \Carbon\Carbon::parse($reg->sample->dispatch->dispatch_date)->format('d M Y');
+                                                            $qrPayload = "SAMPLE ID: {$sampleCode}\nPROGRAM: {$reg->program->program_code}\nCOURIER: {$courier}\nTRACKING #: {$tracking}\nDISPATCH DATE: {$dispatchDate}\nLABORATORY: {$lab->laboratory_name}";
+                                                        @endphp
 
-                                                    <p class="small text-muted mb-3">Scan this QR Code upon parcel arrival to verify official sample authenticity.</p>
+                                                        <div class="p-3 bg-light rounded border d-inline-block mb-3 shadow-sm">
+                                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data={{ urlencode($qrPayload) }}" alt="Sample QR Code" style="width: 160px; height: 160px;">
+                                                            <div class="mt-2 font-monospace fw-bold text-primary fs-6">{{ $sampleCode }}</div>
+                                                        </div>
 
-                                                    <div class="bg-light p-3 rounded border text-start mb-2">
-                                                        <div class="row g-2 small">
-                                                            <div class="col-6"><span class="text-muted d-block">Courier Partner:</span> <strong>{{ $courier }}</strong></div>
-                                                            <div class="col-6"><span class="text-muted d-block">Tracking Number:</span> <code class="fw-bold text-dark font-monospace fs-6">{{ $tracking }}</code></div>
-                                                            <div class="col-6 mt-2"><span class="text-muted d-block">Dispatch Date:</span> <strong>{{ $dispatchDate }}</strong></div>
-                                                            <div class="col-6 mt-2"><span class="text-muted d-block">PT Scheme:</span> <strong>{{ $reg->program->program_code }}</strong></div>
+                                                        <p class="small text-muted mb-3">Scan this QR Code upon parcel arrival to verify official sample authenticity.</p>
+
+                                                        <div class="bg-light p-3 rounded border text-start mb-2">
+                                                            <div class="row g-2 small">
+                                                                <div class="col-6"><span class="text-muted d-block">Courier Partner:</span> <strong>{{ $courier }}</strong></div>
+                                                                <div class="col-6"><span class="text-muted d-block">Tracking Number:</span> <code class="fw-bold text-dark font-monospace fs-6">{{ $tracking }}</code></div>
+                                                                <div class="col-6 mt-2"><span class="text-muted d-block">Dispatch Date:</span> <strong>{{ $dispatchDate }}</strong></div>
+                                                                <div class="col-6 mt-2"><span class="text-muted d-block">PT Scheme:</span> <strong>{{ $reg->program->program_code }}</strong></div>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                                <div class="modal-footer bg-light py-2 justify-content-between">
-                                                    <button type="button" class="btn btn-outline-dark btn-sm" onclick="printDashQr('printableDashQr{{ $reg->registration_id }}')">
-                                                        <i class="bx bx-printer me-1"></i> Print QR Slip
-                                                    </button>
-                                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                                                    <div class="modal-footer bg-light py-2 justify-content-between">
+                                                        <button type="button" class="btn btn-outline-dark btn-sm" onclick="printDashQr('printableDashQr{{ $reg->registration_id }}')">
+                                                            <i class="bx bx-printer me-1"></i> Print QR Slip
+                                                        </button>
+                                                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    @endif
                                 @else
                                     <span class="badge bg-light text-muted border">In Processing</span>
                                 @endif

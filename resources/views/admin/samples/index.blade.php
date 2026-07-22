@@ -11,16 +11,22 @@
     <div>
         @if($programs->isNotEmpty())
             <div class="dropdown">
-                <button class="btn btn-primary btn-sm dropdown-toggle fw-semibold shadow-sm" type="button" data-bs-toggle="dropdown">
+                <button class="btn btn-primary btn-sm dropdown-toggle fw-semibold shadow-sm" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
                     <i class="bx bx-bolt me-1"></i> Assign Program Samples
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow">
+                <ul class="dropdown-menu dropdown-menu-end shadow" style="max-height: 380px; overflow-y: auto; min-width: 320px;">
                     <li class="dropdown-header text-uppercase small fw-bold">Select Program to Assign Samples</li>
+                    <li class="px-3 py-2 border-bottom sticky-top bg-white" style="z-index: 10;">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-light border-end-0"><i class="bx bx-search"></i></span>
+                            <input type="text" id="dropdownSearchInput" class="form-control border-start-0" placeholder="Type to search..." onkeyup="filterAssignDropdown()">
+                        </div>
+                    </li>
                     @foreach($programs as $prog)
-                        <li>
+                        <li class="dropdown-item-wrapper" data-search="{{ strtolower($prog->program_code . ' ' . $prog->program_name) }}">
                             <a class="dropdown-item d-flex justify-content-between align-items-center" href="{{ route('admin.samples.program', $prog->program_id) }}">
                                 <span><i class="bx bx-layer me-2 text-primary"></i>{{ $prog->program_code }}</span>
-                                <small class="text-muted ms-2">{{ $prog->program_name }}</small>
+                                <small class="text-muted ms-2 text-wrap text-end" style="max-width: 180px;">{{ $prog->program_name }}</small>
                             </a>
                         </li>
                     @endforeach
@@ -127,7 +133,6 @@
                     @endforelse
                 </tbody>
             </table>
-        </div>
     </div>
     @if($samples->hasPages())
         <div class="card-footer bg-white py-3">
@@ -135,4 +140,23 @@
         </div>
     @endif
 </div>
+
+@push('scripts')
+<script>
+function filterAssignDropdown() {
+    var input = document.getElementById('dropdownSearchInput');
+    var filter = input.value.toLowerCase();
+    var items = document.querySelectorAll('.dropdown-item-wrapper');
+
+    items.forEach(function(item) {
+        var text = item.getAttribute('data-search') || '';
+        if (text.indexOf(filter) > -1) {
+            item.style.display = "";
+        } else {
+            item.style.display = "none";
+        }
+    });
+}
+</script>
+@endpush
 @endsection
