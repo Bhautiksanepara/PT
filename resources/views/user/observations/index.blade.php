@@ -5,7 +5,7 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1"><i class="bx bx-vial me-2 text-success"></i> Phase 6 – Test Observation Submissions</h4>
+        <h4 class="fw-bold mb-1"><i class="bx bx-vial me-2 text-success"></i>Test Observation Submissions</h4>
         <p class="text-muted small mb-0">Enter and manage your laboratory test parameters, test methods, measurement uncertainty (MU), and raw data uploads</p>
     </div>
     <div>

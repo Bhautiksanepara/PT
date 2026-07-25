@@ -73,51 +73,62 @@
                         <tbody>
                             @foreach($observation->registration->program->parameters as $param)
                                 @php
-                                    $obs = $allObservations->get($param->parameter_id);
-                                    $isCurrent = $obs && $obs->observation_id == $observation->observation_id;
+                                    $obs          = $allObservations->get($param->parameter_id);
+                                    $isCurrent    = $obs && $obs->observation_id == $observation->observation_id;
+                                    $isRegistered = in_array($param->parameter_id, $registeredParamIds);
                                 @endphp
-                                <tr class="{{ $isCurrent ? 'table-primary' : '' }}" style="{{ $isCurrent ? 'border-left: 3px solid #0d6efd;' : '' }}">
-                                    <td class="ps-3 fw-semibold {{ $isCurrent ? 'text-primary' : 'text-dark' }}">
+                                <tr class="{{ $isCurrent ? 'table-primary' : (!$isRegistered ? 'bg-light opacity-75' : '') }}"
+                                    style="{{ $isCurrent ? 'border-left: 3px solid #0d6efd;' : (!$isRegistered ? 'border-left: 3px solid #adb5bd;' : '') }}">
+                                    <td class="ps-3 fw-semibold {{ $isCurrent ? 'text-primary' : (!$isRegistered ? 'text-secondary' : 'text-dark') }}">
                                         {{ $param->parameter_name }}
                                         @if($isCurrent)
                                             <span class="badge bg-primary ms-1" style="font-size:0.65rem;">Current</span>
+                                        @elseif(!$isRegistered)
+                                            <span class="badge bg-secondary ms-1" style="font-size:0.65rem;">Not Registered</span>
                                         @endif
                                     </td>
-                                    <td class="text-muted small">{{ $obs?->test_method ?: '—' }}</td>
-                                    <td class="text-center">
-                                        @if($obs && $obs->result_value !== null && $obs->result_value !== '')
-                                            <span class="fw-bold fs-6 text-success">{{ $obs->result_value }}</span>
-                                        @else
-                                            <span class="badge bg-warning text-dark" style="font-size:0.7rem;">Not Submitted</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-center text-muted small">{{ $obs?->unit ?: '—' }}</td>
-                                    <td class="text-center text-muted small">{{ $obs?->uncertainty ?: '—' }}</td>
-                                    <td class="text-center">
-                                        @if($obs)
-                                            @if($obs->is_locked)
-                                                <span class="badge bg-danger"><i class="bx bx-lock-alt me-1"></i>Locked</span>
+                                    @if(!$isRegistered)
+                                        {{-- Not registered by this lab — show greyed empty row --}}
+                                        <td class="text-center text-secondary small fst-italic" colspan="7">
+                                            This laboratory did not register for this parameter.
+                                        </td>
+                                    @else
+                                        <td class="text-muted small">{{ $obs?->test_method ?: '—' }}</td>
+                                        <td class="text-center">
+                                            @if($obs && $obs->result_value !== null && $obs->result_value !== '')
+                                                <span class="fw-bold fs-6 text-success">{{ $obs->result_value }}</span>
                                             @else
-                                                <span class="badge bg-success"><i class="bx bx-check me-1"></i>Submitted</span>
+                                                <span class="badge bg-warning text-dark" style="font-size:0.7rem;">Not Submitted</span>
                                             @endif
-                                        @else
-                                            <span class="text-muted small">—</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-center small text-muted">
-                                        @if($obs && $obs->submitted_at)
-                                            {{ \Carbon\Carbon::parse($obs->submitted_at)->format('d M Y') }}
-                                        @else
-                                            —
-                                        @endif
-                                    </td>
-                                    <td class="small">
-                                        @if($obs && $obs->remarks)
-                                            <span class="text-dark">{{ $obs->remarks }}</span>
-                                        @else
-                                            <span class="text-muted fst-italic">No remarks</span>
-                                        @endif
-                                    </td>
+                                        </td>
+                                        <td class="text-center text-muted small">{{ $obs?->unit ?: '—' }}</td>
+                                        <td class="text-center text-muted small">{{ $obs?->uncertainty ?: '—' }}</td>
+                                        <td class="text-center">
+                                            @if($obs)
+                                                @if($obs->is_locked)
+                                                    <span class="badge bg-danger"><i class="bx bx-lock-alt me-1"></i>Locked</span>
+                                                @else
+                                                    <span class="badge bg-success"><i class="bx bx-check me-1"></i>Submitted</span>
+                                                @endif
+                                            @else
+                                                <span class="text-muted small">—</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-center small text-muted">
+                                            @if($obs && $obs->submitted_at)
+                                                {{ \Carbon\Carbon::parse($obs->submitted_at)->format('d M Y') }}
+                                            @else
+                                                —
+                                            @endif
+                                        </td>
+                                        <td class="small">
+                                            @if($obs && $obs->remarks)
+                                                <span class="text-dark">{{ $obs->remarks }}</span>
+                                            @else
+                                                <span class="text-muted fst-italic">No remarks</span>
+                                            @endif
+                                        </td>
+                                    @endif
                                 </tr>
                             @endforeach
                         </tbody>
@@ -271,17 +282,25 @@
                             <tbody>
                                 @foreach($observation->registration->program->parameters as $param)
                                     @php
-                                        $obs = $allObservations->get($param->parameter_id);
+                                        $obs          = $allObservations->get($param->parameter_id);
+                                        $isRegistered = in_array($param->parameter_id, $registeredParamIds);
                                     @endphp
-                                    <tr>
-                                        <td class="ps-3 align-middle fw-semibold text-dark" style="vertical-align:middle;">
+                                    <tr class="{{ !$isRegistered ? 'bg-light opacity-75' : '' }}">
+                                        <td class="ps-3 align-middle fw-semibold {{ !$isRegistered ? 'text-secondary' : 'text-dark' }}" style="vertical-align:middle;">
                                             {{ $param->parameter_name }}
-                                            @if(!$obs)
+                                            @if(!$isRegistered)
+                                                <br><span class="badge bg-secondary mt-1" style="font-size:0.62rem;">Not Registered</span>
+                                            @elseif(!$obs)
                                                 <br><span class="badge bg-warning text-dark mt-1" style="font-size:0.65rem;">Not Submitted</span>
                                             @endif
                                         </td>
 
-                                        @if($obs)
+                                        @if(!$isRegistered)
+                                            {{-- Lab did not register for this — fully disabled --}}
+                                            <td colspan="6" class="text-center text-secondary small fst-italic py-2">
+                                                Lab did not register for this parameter — not editable.
+                                            </td>
+                                        @elseif($obs)
                                             <td>
                                                 <input type="text"
                                                     name="observations[{{ $obs->observation_id }}][test_method]"

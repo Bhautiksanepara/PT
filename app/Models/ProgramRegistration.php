@@ -48,6 +48,18 @@ class ProgramRegistration extends Model
         return $this->hasMany(Observation::class, 'registration_id', 'registration_id');
     }
 
+    public function registeredParameters()
+    {
+        return $this->belongsToMany(
+            ProgramParameter::class,
+            'registration_parameters',
+            'registration_id',
+            'parameter_id',
+            'registration_id',
+            'parameter_id'
+        );
+    }
+
     public function reports()
     {
         return $this->hasMany(Report::class, 'registration_id', 'registration_id');

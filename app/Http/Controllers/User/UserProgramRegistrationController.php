@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\PtProgram;
 use App\Models\ProgramRegistration;
+use App\Models\RegistrationParameter;
 use App\Models\ReferralCode;
 use App\Models\Payment;
 use App\Mail\PaymentConfirmationMail;
@@ -129,11 +130,13 @@ class UserProgramRegistrationController extends Controller
         $program = PtProgram::findOrFail($program_id);
 
         $validated = $request->validate([
-            'sample_quantity' => 'required|string|max:150',
-            'shipping_address' => 'required|string',
-            'billing_address' => 'required|string',
-            'referral_code' => 'nullable|string',
-            'payment_method' => 'required|string|max:100',
+            'sample_quantity'     => 'required|string|max:150',
+            'shipping_address'    => 'required|string',
+            'billing_address'     => 'required|string',
+            'referral_code'       => 'nullable|string',
+            'payment_method'      => 'required|string|max:100',
+            'selected_parameters' => 'nullable|array',
+            'selected_parameters.*' => 'integer',
         ]);
 
         // Calculate Fee & Referral Code Discount
@@ -218,6 +221,24 @@ class UserProgramRegistrationController extends Controller
 
             return $reg;
         });
+
+        // ── Save selected parameters into registration_parameters table ──
+        // Determine which parameter IDs to register
+        $selectedIds = $request->input('selected_parameters', []);
+
+        if (empty($selectedIds)) {
+            // Fallback: if somehow nothing was sent, register ALL program parameters
+            $selectedIds = $program->parameters->pluck('parameter_id')->toArray();
+        }
+
+        // Remove old entries (in case of re-registration edge case) then insert fresh
+        RegistrationParameter::where('registration_id', $registration->registration_id)->delete();
+        foreach ($selectedIds as $paramId) {
+            RegistrationParameter::create([
+                'registration_id' => $registration->registration_id,
+                'parameter_id'    => (int)$paramId,
+            ]);
+        }
 
         return redirect()->route('user.dashboard')->with('success', "Registration completed successfully! Your Registration Number is {$registration->registration_number}. Tax Invoice and scheme details are now available in your Dashboard.");
     }

@@ -43,16 +43,22 @@ class UserObservationController extends Controller
     {
         $lab = Auth::guard('lab')->user();
 
-        $registration = ProgramRegistration::with(['program.parameters', 'sample'])
+        $registration = ProgramRegistration::with(['program.parameters', 'registeredParameters', 'sample'])
             ->where('lab_id', $lab->lab_id)
             ->findOrFail($registration_id);
 
         $program = $registration->program;
-        $sample = $registration->sample;
+        $sample  = $registration->sample;
 
         if (!$sample) {
             return redirect()->route('user.observations.index')->with('error', 'Sample code has not been assigned by Admin yet. Please wait for sample dispatch.');
         }
+
+        // Determine which parameters this lab registered for
+        // If registration_parameters table has entries, use those; else fall back to all
+        $registeredParams = $registration->registeredParameters->count() > 0
+            ? $registration->registeredParameters
+            : $program->parameters;
 
         // Deadline check
         $deadline = $program->submission_deadline ? \Carbon\Carbon::parse($program->submission_deadline) : null;
@@ -70,7 +76,8 @@ class UserObservationController extends Controller
             'sample',
             'existingObservations',
             'isPastDeadline',
-            'deadline'
+            'deadline',
+            'registeredParams'
         ));
     }
 

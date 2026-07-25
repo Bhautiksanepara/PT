@@ -50,6 +50,7 @@ class ObservationController extends Controller
         $observation = Observation::with([
             'sample',
             'registration.program.parameters',
+            'registration.registeredParameters',
             'lab',
             'parameter.program',
             'files'
@@ -61,7 +62,12 @@ class ObservationController extends Controller
             ->get()
             ->keyBy('parameter_id');
 
-        return view('admin.observations.show', compact('observation', 'allObservations'));
+        // Build a set of registered parameter IDs for this specific lab's registration
+        $registeredParamIds = $observation->registration->registeredParameters->count() > 0
+            ? $observation->registration->registeredParameters->pluck('parameter_id')->toArray()
+            : $observation->registration->program->parameters->pluck('parameter_id')->toArray();
+
+        return view('admin.observations.show', compact('observation', 'allObservations', 'registeredParamIds'));
     }
 
     public function update(Request $request, $observation_id)

@@ -4,17 +4,56 @@
 
 @push('styles')
 <style>
+    /* ── Screen styles ────────────────────────────────────────── */
+    .printable-matrix {
+        /* nothing special on screen */
+    }
+
+    /* ── Print: hide EVERYTHING except #printable-matrix ──────── */
     @media print {
-        body { background: #fff !important; }
-        .sidebar, .navbar, .btn-print-bar, footer { display: none !important; }
-        .content-wrapper { margin: 0 !important; padding: 0 !important; }
+        /* Hide the entire body first */
+        body > * { display: none !important; }
+
+        /* Then show only our printable section */
+        #printable-matrix,
+        #printable-matrix * {
+            display: revert !important;
+            visibility: visible !important;
+        }
+
+        #printable-matrix {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 16px !important;
+            background: #fff !important;
+            font-size: 11px !important;
+        }
+
+        /* Keep table borders visible */
+        table, th, td {
+            border: 1px solid #333 !important;
+        }
+        thead { background-color: #1e3a5f !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+        /* Remove shadows and rounded corners for clean print */
+        .card { box-shadow: none !important; border: none !important; }
+
+        /* Page setup */
+        @page {
+            size: A4 landscape;
+            margin: 10mm;
+        }
     }
 </style>
 @endpush
 
 @section('content')
-<!-- Action Bar -->
-<div class="d-flex justify-content-between align-items-center mb-4 btn-print-bar">
+<!-- Action Bar — hidden on print -->
+<div class="d-flex justify-content-between align-items-center mb-4" id="no-print-bar">
     <div>
         <h4 class="fw-bold mb-1">Master Consolidated Z-Score Matrix Report</h4>
         <p class="text-muted small mb-0">Program: {{ $program->program_code }} — {{ $program->program_name }}</p>
@@ -29,70 +68,84 @@
     </div>
 </div>
 
-<!-- Master Matrix Document -->
-<div class="card p-4 shadow-sm mb-5">
-    <div class="border-bottom pb-3 mb-4 d-flex justify-content-between align-items-center">
-        <div>
-            <h4 class="fw-bold text-dark mb-0">MASTER PROFICIENCY CONSOLIDATED EVALUATION MATRIX</h4>
-            <p class="text-muted small mb-0">ISO 17043 Comprehensive Laboratory Performance Comparison Report</p>
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PRINTABLE ZONE — only this div renders when printing       -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div id="printable-matrix">
+
+    <!-- Matrix Document Header -->
+    <div class="card p-4 shadow-sm mb-5">
+        <div class="border-bottom pb-3 mb-4 d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="fw-bold text-dark mb-0">MASTER PROFICIENCY CONSOLIDATED EVALUATION MATRIX</h4>
+                <p class="text-muted small mb-0">ISO 17043 Comprehensive Laboratory Performance Comparison Report</p>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-primary fs-6">{{ $program->program_code }}</span>
+                <small class="text-muted d-block mt-1">Discipline: {{ $program->discipline->discipline_name ?? $program->discipline }}</small>
+            </div>
         </div>
-        <div class="text-end">
-            <span class="badge bg-primary fs-6">{{ $program->program_code }}</span>
-            <small class="text-muted d-block mt-1">Discipline: {{ $program->discipline }}</small>
+
+        <!-- Master Matrix Table -->
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle mb-0">
+                <thead class="table-dark text-center">
+                    <tr>
+                        <th rowspan="2" class="align-middle">Registration #</th>
+                        <th rowspan="2" class="align-middle">Sample Code</th>
+                        <th rowspan="2" class="align-middle">Participating Laboratory</th>
+                        <th colspan="{{ count($parameters) }}">Test Parameters &amp; Evaluated Z-Scores</th>
+                    </tr>
+                    <tr>
+                        @foreach($parameters as $param)
+                            <th>
+                                {{ $param->parameter_name }}
+                                <small class="d-block text-white-50">(x* = {{ $paramStats[$param->parameter_id]['robust_mean'] ?? 'N/A' }})</small>
+                            </th>
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($matrix as $row)
+                        <tr>
+                            <td class="fw-bold text-primary">{{ $row['reg']->registration_number }}</td>
+                            <td class="fw-bold text-dark text-center"><i class="bx bx-qr-scan me-1"></i> {{ $row['sample']->sample_code ?? 'N/A' }}</td>
+                            <td>
+                                <div class="fw-bold text-dark">{{ $row['lab']->laboratory_name ?? 'N/A' }}</div>
+                                <small class="text-muted">{{ $row['lab']->email ?? '' }}</small>
+                            </td>
+                            @foreach($parameters as $param)
+                                @php
+                                    $eval = $row['evaluations'][$param->parameter_id] ?? null;
+                                @endphp
+                                <td class="text-center">
+                                    @if($eval)
+                                        <div class="fw-bold fs-6 {{ $eval['status'] === 'satisfactory' ? 'text-success' : ($eval['status'] === 'warning' ? 'text-warning' : 'text-danger') }}">
+                                            Z = {{ $eval['z_score'] > 0 ? '+' : '' }}{{ number_format($eval['z_score'], 2) }}
+                                        </div>
+                                        <span class="badge {{ $eval['badge_class'] }} micro-text mt-1">
+                                            {{ $eval['label'] }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted small">Not Reported</span>
+                                    @endif
+                                </td>
+                            @endforeach
+                        </tr>
+                    @empty
+                        <tr><td colspan="{{ 3 + count($parameters) }}" class="text-center text-muted py-5">No participant registrations found for master report matrix.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Print footer info -->
+        <div class="mt-3 pt-3 border-top d-flex justify-content-between align-items-center small text-muted" id="print-footer-info">
+            <span>Generated: {{ now()->format('d M Y, H:i') }}</span>
+            <span>PT Software — ISO 17043 Proficiency Testing Management System</span>
+            <span>Program: {{ $program->program_code }}</span>
         </div>
     </div>
 
-    <!-- Master Matrix Table -->
-    <div class="table-responsive">
-        <table class="table table-bordered align-middle mb-0">
-            <thead class="table-dark text-center">
-                <tr>
-                    <th rowspan="2" class="align-middle">Registration #</th>
-                    <th rowspan="2" class="align-middle">Sample Code</th>
-                    <th rowspan="2" class="align-middle">Participating Laboratory</th>
-                    <th colspan="{{ count($parameters) }}">Test Parameters & Evaluated Z-Scores</th>
-                </tr>
-                <tr>
-                    @foreach($parameters as $param)
-                        <th>
-                            {{ $param->parameter_name }}
-                            <small class="d-block text-white-50">(x* = {{ $paramStats[$param->parameter_id]['robust_mean'] ?? 'N/A' }})</small>
-                        </th>
-                    @endforeach
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($matrix as $row)
-                    <tr>
-                        <td class="fw-bold text-primary">{{ $row['reg']->registration_number }}</td>
-                        <td class="fw-bold text-dark text-center"><i class="bx bx-qr-scan me-1"></i> {{ $row['sample']->sample_code ?? 'N/A' }}</td>
-                        <td>
-                            <div class="fw-bold text-dark">{{ $row['lab']->laboratory_name ?? 'N/A' }}</div>
-                            <small class="text-muted">{{ $row['lab']->email ?? '' }}</small>
-                        </td>
-                        @foreach($parameters as $param)
-                            @php
-                                $eval = $row['evaluations'][$param->parameter_id] ?? null;
-                            @endphp
-                            <td class="text-center">
-                                @if($eval)
-                                    <div class="fw-bold fs-6 {{ $eval['status'] === 'satisfactory' ? 'text-success' : ($eval['status'] === 'warning' ? 'text-warning' : 'text-danger') }}">
-                                        Z = {{ $eval['z_score'] > 0 ? '+' : '' }}{{ number_format($eval['z_score'], 2) }}
-                                    </div>
-                                    <span class="badge {{ $eval['badge_class'] }} micro-text mt-1">
-                                        {{ $eval['label'] }}
-                                    </span>
-                                @else
-                                    <span class="text-muted small">Not Reported</span>
-                                @endif
-                            </td>
-                        @endforeach
-                    </tr>
-                @empty
-                    <tr><td colspan="{{ 3 + count($parameters) }}" class="text-center text-muted py-5">No participant registrations found for master report matrix.</td></tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-</div>
+</div><!-- /#printable-matrix -->
 @endsection

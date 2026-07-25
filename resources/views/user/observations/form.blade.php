@@ -40,7 +40,7 @@
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
                 <h6 class="fw-bold mb-0 text-white"><i class="bx bx-spreadsheet me-2 text-success"></i> Test Results & Measurement Uncertainty Data Entry</h6>
-                <span class="badge bg-primary font-monospace">{{ $program->parameters->count() }} Parameters</span>
+                <span class="badge bg-primary font-monospace">{{ $registeredParams->count() }} Registered Parameter(s)</span>
             </div>
             <div class="card-body p-4">
                 <div class="table-responsive mb-4">
@@ -56,7 +56,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($program->parameters as $index => $param)
+                            @forelse($registeredParams as $index => $param)
                                 @php
                                     $existing = $existingObservations->get($param->parameter_id);
                                 @endphp

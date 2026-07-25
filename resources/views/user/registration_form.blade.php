@@ -66,18 +66,42 @@
                     </div>
                 </div>
 
-                <h6 class="fw-bold text-dark small mb-2">Test Parameters Included:</h6>
-                <div class="d-flex flex-wrap gap-2">
+                <h6 class="fw-bold text-dark small mb-2">
+                    <i class="bx bx-list-check me-1 text-primary"></i>
+                    Test Parameters — Select Your Scope
+                    <small class="text-muted fw-normal ms-2">(All pre-selected. Click <strong>✕</strong> to remove a parameter you will NOT test.)</small>
+                </h6>
+
+                <div class="d-flex flex-wrap gap-2 mb-2" id="paramChips">
                     @foreach($program->parameters as $pm)
-                        <span class="badge bg-light text-dark border p-2">
-                            <i class="bx bx-check-circle me-1 text-success"></i> <strong>{{ $pm->parameter_name }}</strong> ({{ $pm->test_method }})
-                        </span>
+                        <div class="param-chip d-flex align-items-center gap-1 px-3 py-2 rounded border border-success bg-success bg-opacity-10"
+                             id="chip-{{ $pm->parameter_id }}"
+                             data-param-id="{{ $pm->parameter_id }}"
+                             data-selected="1"
+                             style="cursor:default; transition: all 0.2s;">
+                            <i class="bx bx-test-tube text-success me-1"
+                               id="icon-{{ $pm->parameter_id }}"
+                               style="font-size:0.9rem;"></i>
+                            <span class="fw-semibold text-dark small">{{ $pm->parameter_name }}</span>
+                            <small class="text-muted ms-1">({{ $pm->test_method }})</small>
+                            <button type="button"
+                                id="btn-{{ $pm->parameter_id }}"
+                                onclick="toggleParam({{ $pm->parameter_id }})"
+                                class="btn-close ms-2"
+                                style="font-size:0.55rem;"
+                                title="Remove this parameter"></button>
+                        </div>
                     @endforeach
+                </div>
+
+                <div id="noParamWarning" class="alert alert-warning py-2 small d-none">
+                    <i class="bx bx-error-circle me-1"></i>
+                    You must select at least <strong>1 parameter</strong> to register.
                 </div>
             </div>
         </div>
 
-        <!-- Registration & Payment Form -->
+        {{-- Registration & Payment Form --}}
         <div class="card shadow-sm">
             <div class="card-header bg-light">
                 <h6 class="fw-bold mb-0 text-dark"><i class="bx bx-edit me-2 text-primary"></i> Participant Registration Form</h6>
@@ -87,6 +111,13 @@
                 <form action="{{ route('user.registration.submit', $program->program_id) }}" method="POST" id="regForm">
                     @csrf
                     <input type="hidden" name="stripe_payment_intent_id" id="stripeIntentInput">
+
+                    {{-- Hidden container: JS populates/removes selected_parameters[] hidden inputs here --}}
+                    <div id="selectedParamsContainer">
+                        @foreach($program->parameters as $pm)
+                            <input type="hidden" name="selected_parameters[]" value="{{ $pm->parameter_id }}" id="param-hidden-{{ $pm->parameter_id }}">
+                        @endforeach
+                    </div>
 
                     <!-- Sample Quantity & Addresses -->
                     <div class="mb-4">
@@ -207,6 +238,83 @@
 
 @push('scripts')
 <script>
+    // ── Parameter Chip Toggle Logic (remove ↔ restore) ──────────
+    // Uses hidden inputs in #selectedParamsContainer — reliable with all submit paths
+    function toggleParam(parameterId) {
+        var chip   = document.getElementById('chip-' + parameterId);
+        var hidden = document.getElementById('param-hidden-' + parameterId);
+        var btn    = document.getElementById('btn-' + parameterId);
+        var icon   = document.getElementById('icon-' + parameterId);
+
+        if (!chip) return;
+
+        var isCurrentlySelected = chip.dataset.selected === '1';
+
+        if (isCurrentlySelected) {
+            // ── REMOVE: deselect chip + remove hidden input from container ──
+            chip.dataset.selected = '0';
+            chip.classList.remove('border-success', 'bg-success', 'bg-opacity-10');
+            chip.classList.add('border-danger', 'bg-danger', 'bg-opacity-10', 'text-decoration-line-through');
+
+            // Remove hidden input so it doesn't get submitted
+            if (hidden) hidden.disabled = true;
+
+            if (icon) {
+                icon.classList.remove('bx-test-tube', 'text-success');
+                icon.classList.add('bx-x-circle', 'text-danger');
+            }
+            if (btn) {
+                btn.classList.remove('btn-close');
+                btn.innerHTML = '<i class="bx bx-undo" style="font-size:0.85rem; pointer-events:none;"></i>';
+                btn.title = 'Restore this parameter';
+                btn.classList.add('btn', 'btn-sm', 'btn-link', 'p-0', 'ms-1', 'text-success');
+            }
+        } else {
+            // ── RESTORE: re-select chip + re-enable hidden input ──
+            chip.dataset.selected = '1';
+            chip.classList.add('border-success', 'bg-success', 'bg-opacity-10');
+            chip.classList.remove('border-danger', 'bg-danger', 'bg-opacity-10', 'text-decoration-line-through');
+
+            // Re-enable hidden input so it gets submitted
+            if (hidden) hidden.disabled = false;
+
+            if (icon) {
+                icon.classList.add('bx-test-tube', 'text-success');
+                icon.classList.remove('bx-x-circle', 'text-danger');
+            }
+            if (btn) {
+                btn.classList.add('btn-close');
+                btn.innerHTML = '';
+                btn.title = 'Remove this parameter';
+                btn.classList.remove('btn', 'btn-sm', 'btn-link', 'p-0', 'ms-1', 'text-success');
+            }
+        }
+
+        checkMinParams();
+    }
+
+    function checkMinParams() {
+        var activeHiddens = document.querySelectorAll('#selectedParamsContainer input[type="hidden"]:not(:disabled)');
+        var warning = document.getElementById('noParamWarning');
+        if (activeHiddens.length === 0) {
+            warning.classList.remove('d-none');
+        } else {
+            warning.classList.add('d-none');
+        }
+    }
+
+    // Guard: prevent form submit if 0 parameters selected
+    document.getElementById('regForm').addEventListener('submit', function(e) {
+        var activeHiddens = document.querySelectorAll('#selectedParamsContainer input[type="hidden"]:not(:disabled)');
+        if (activeHiddens.length === 0) {
+            e.preventDefault();
+            document.getElementById('noParamWarning').classList.remove('d-none');
+            document.getElementById('noParamWarning').scrollIntoView({ behavior: 'smooth' });
+            return false;
+        }
+    }, true);
+
+    // ── Stripe + existing scripts ────────────────────────────────
     var stripe = null;
     var elements = null;
     var cardElement = null;
