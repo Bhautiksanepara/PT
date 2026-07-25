@@ -87,7 +87,7 @@
                         <td>1</td>
                         <td>
                             <strong class="text-dark">{{ $registration->program->program_name }}</strong>
-                            <small class="text-muted d-block">Discipline: {{ $registration->program->discipline }} | Sample Quantity: {{ $registration->sample_quantity }}</small>
+                            <small class="text-muted d-block">Discipline: {{ $registration->program->discipline->discipline_name ?? 'N/A' }} | Sample Quantity: {{ $registration->sample_quantity }}</small>
                         </td>
                         <td><span class="badge bg-light text-dark border">{{ $registration->program->program_code }}</span></td>
                         <td class="text-end fw-semibold">₹{{ number_format($registration->payment->amount ?? $registration->program->program_fee, 2) }}</td>

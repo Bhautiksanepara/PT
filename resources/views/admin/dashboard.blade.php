@@ -239,15 +239,16 @@
             series: [
                 {{ $programStatusCounts['draft'] }},
                 {{ $programStatusCounts['open'] }},
-                {{ $programStatusCounts['closed'] }},
-                {{ $programStatusCounts['completed'] }}
+                {{ $programStatusCounts['reopen'] }},
+                {{ $programStatusCounts['completed'] }},
+                {{ $programStatusCounts['forcefully_closed'] }}
             ],
-            labels: ['Draft', 'Open (Active)', 'Closed', 'Completed'],
+            labels: ['Draft', 'Open', 'Reopen', 'Completed', 'Forcefully Closed'],
             chart: {
                 type: 'donut',
                 height: 280
             },
-            colors: ['#94a3b8', '#10b981', '#ef4444', '#3b82f6'],
+            colors: ['#94a3b8', '#0ea5e9', '#10b981', '#6366f1', '#ef4444'],
             legend: {
                 position: 'bottom'
             },

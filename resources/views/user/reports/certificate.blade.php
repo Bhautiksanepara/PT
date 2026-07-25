@@ -165,7 +165,7 @@
             <div class="p-3 bg-light rounded border my-4 d-inline-block px-5">
                 <h4 class="fw-bold text-dark mb-1">{{ $program->program_name }}</h4>
                 <span class="badge bg-primary fs-6 me-2">Scheme Code: {{ $program->program_code }}</span>
-                <span class="badge bg-secondary fs-6">Discipline: {{ $program->discipline }}</span>
+                <span class="badge bg-secondary fs-6">Discipline: {{ $program->discipline->discipline_name ?? 'N/A' }}</span>
             </div>
 
             <p class="text-muted small my-3">

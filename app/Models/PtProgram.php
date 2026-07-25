@@ -13,7 +13,7 @@ class PtProgram extends Model
     protected $fillable = [
         'program_code',
         'program_name',
-        'discipline',
+        'discipline_id',
         'scheme_code',
         'description',
         'program_fee',
@@ -26,6 +26,30 @@ class PtProgram extends Model
         'program_status',
         'created_by',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::saving(function ($program) {
+            $today = Carbon::today();
+            $startDate = $program->registration_start_date ? Carbon::parse($program->registration_start_date) : null;
+            $endDate = $program->registration_end_date ? Carbon::parse($program->registration_end_date) : null;
+
+            if ($startDate && $today->lt($startDate)) {
+                $program->registration_status = 'upcoming';
+            } elseif ($endDate && $today->gt($endDate)) {
+                $program->registration_status = 'closed';
+            } else {
+                $program->registration_status = 'active';
+            }
+        });
+    }
+
+    public function discipline()
+    {
+        return $this->belongsTo(DisciplineMaster::class, 'discipline_id', 'id');
+    }
 
     public function parameters()
     {
@@ -58,7 +82,7 @@ class PtProgram extends Model
     public function getComputedRegistrationStatusAttribute()
     {
         // If manually marked closed or completed
-        if ($this->registration_status === 'closed' || $this->program_status === 'closed' || $this->program_status === 'completed') {
+        if ($this->registration_status === 'closed' || $this->program_status === 'forcefully_closed') {
             return 'closed';
         }
 
@@ -83,5 +107,28 @@ class PtProgram extends Model
     public function isRegistrationOpen()
     {
         return $this->computed_registration_status === 'active';
+    }
+
+    public function getComputedProgramStatusAttribute()
+    {
+        if (!empty($this->program_status)) {
+            return $this->program_status;
+        }
+
+        $today = Carbon::today();
+        $startDate = $this->registration_start_date ? Carbon::parse($this->registration_start_date) : null;
+        $endDate = $this->registration_end_date ? Carbon::parse($this->registration_end_date) : null;
+        $deadline = $this->submission_deadline ? Carbon::parse($this->submission_deadline) : null;
+
+        if ($startDate && $today->lt($startDate)) {
+            return 'upcoming';
+        }
+        if ($endDate && $today->lt($endDate)) {
+            return 'open';
+        }
+        if ($deadline && $today->lte($deadline)) {
+            return 'active';
+        }
+        return 'closed';
     }
 }

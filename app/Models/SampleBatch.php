@@ -50,4 +50,9 @@ class SampleBatch extends Model
     {
         return $this->hasMany(Sample::class, 'batch_id', 'batch_id');
     }
+
+    public function referenceValues()
+    {
+        return $this->hasMany(BatchParameterReferenceValue::class, 'batch_id', 'batch_id');
+    }
 }

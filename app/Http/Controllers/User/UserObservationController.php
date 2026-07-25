@@ -56,7 +56,7 @@ class UserObservationController extends Controller
 
         // Deadline check
         $deadline = $program->submission_deadline ? \Carbon\Carbon::parse($program->submission_deadline) : null;
-        $isPastDeadline = ($deadline && now()->greaterThan($deadline->endOfDay())) || ($program->program_status === 'completed');
+        $isPastDeadline = ($deadline && now()->greaterThan($deadline->endOfDay())) || ($program->program_status === 'forcefully_closed');
 
         // Fetch existing observations
         $existingObservations = Observation::with('files')
@@ -91,7 +91,7 @@ class UserObservationController extends Controller
 
         // Deadline check
         $deadline = $program->submission_deadline ? \Carbon\Carbon::parse($program->submission_deadline) : null;
-        if (($deadline && now()->greaterThan($deadline->endOfDay())) || ($program->program_status === 'completed')) {
+        if (($deadline && now()->greaterThan($deadline->endOfDay())) || ($program->program_status === 'forcefully_closed')) {
             return redirect()->back()->with('error', 'Submission deadline has passed. This observation form is locked.');
         }
 

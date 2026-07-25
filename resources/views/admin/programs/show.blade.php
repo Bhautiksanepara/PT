@@ -34,12 +34,20 @@
             <div class="card-header bg-light d-flex justify-content-between align-items-center">
                 <h6 class="fw-bold mb-0">Program Summary & Specifications</h6>
                 <div>
-                    @if($program->program_status === 'open')
-                        <span class="badge bg-success">Open</span>
-                    @elseif($program->program_status === 'closed')
-                        <span class="badge bg-danger">Closed</span>
+                    @if($program->computed_program_status === 'draft')
+                        <span class="badge bg-secondary">Draft</span>
+                    @elseif($program->computed_program_status === 'reopen')
+                        <span class="badge bg-success">Reopened</span>
+                    @elseif($program->computed_program_status === 'forcefully_closed')
+                        <span class="badge bg-danger">Forcefully Closed</span>
+                    @elseif($program->computed_program_status === 'upcoming')
+                        <span class="badge bg-info">Upcoming (Reg)</span>
+                    @elseif($program->computed_program_status === 'open')
+                        <span class="badge bg-success">Open (Reg)</span>
+                    @elseif($program->computed_program_status === 'active')
+                        <span class="badge bg-warning text-dark">Active (Testing)</span>
                     @else
-                        <span class="badge bg-secondary">{{ ucfirst($program->program_status) }}</span>
+                        <span class="badge bg-danger">Closed (Eval)</span>
                     @endif
                 </div>
             </div>
@@ -47,7 +55,7 @@
                 <div class="row g-3">
                     <div class="col-md-4">
                         <small class="text-muted d-block">Discipline</small>
-                        <span class="fw-semibold text-dark">{{ $program->discipline ?? 'N/A' }}</span>
+                        <span class="fw-semibold text-dark">{{ $program->discipline->discipline_name ?? 'N/A' }}</span>
                     </div>
                     <div class="col-md-4">
                         <small class="text-muted d-block">Scheme Code</small>

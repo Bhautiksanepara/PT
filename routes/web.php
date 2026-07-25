@@ -86,6 +86,7 @@ Route::prefix('admin')->middleware(App\Http\Middleware\AdminMiddleware::class)->
     Route::get('dashboard', [DashboardController::class, 'index']);
 
     // Module 2 & 4: PT Program Management & Registration Window Automation
+    Route::get('programs/next-code', [PtProgramController::class, 'getNextCode'])->name('admin.programs.next-code');
     Route::resource('programs', PtProgramController::class)->names('admin.programs');
     Route::post('programs/{program}/close', [PtProgramController::class, 'close'])->name('admin.programs.close');
     Route::post('programs/{program}/toggle-window', [PtProgramController::class, 'toggleRegistrationStatus'])->name('admin.programs.toggle-window');
@@ -141,6 +142,7 @@ Route::prefix('admin')->middleware(App\Http\Middleware\AdminMiddleware::class)->
     // Module 9: Observation Management
     Route::get('observations', [ObservationController::class, 'index'])->name('admin.observations.index');
     Route::get('observations/export/csv', [ObservationController::class, 'exportCsv'])->name('admin.observations.export');
+    Route::post('observations/bulk-update', [ObservationController::class, 'bulkUpdate'])->name('admin.observations.bulkUpdate');
     Route::get('observations/{observation}', [ObservationController::class, 'show'])->name('admin.observations.show');
     Route::put('observations/{observation}', [ObservationController::class, 'update'])->name('admin.observations.update');
 

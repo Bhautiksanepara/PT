@@ -61,8 +61,7 @@ class ReportController extends Controller
         $chartColors = [];
 
         foreach ($program->parameters as $param) {
-            $allObs = Observation::where('parameter_id', $param->parameter_id)->pluck('result_value')->toArray();
-            $stats = $this->statsCalculator->calculate($allObs);
+            $stats = $this->getParameterStats($program, $param);
 
             $labObs = Observation::where('parameter_id', $param->parameter_id)
                 ->where('registration_id', $registration->registration_id)
@@ -107,6 +106,27 @@ class ReportController extends Controller
         ));
     }
 
+    private function getParameterStats(PtProgram $program, ProgramParameter $param)
+    {
+        $batch = \App\Models\SampleBatch::where('program_id', $program->program_id)->first();
+        $refValues = [];
+        if ($batch) {
+            $refValues = \Illuminate\Support\Facades\DB::table('batch_parameter_reference_values')
+                ->where('batch_id', $batch->batch_id)
+                ->where('parameter_id', $param->parameter_id)
+                ->pluck('reference_value')
+                ->map('floatval')
+                ->toArray();
+        }
+
+        if (!empty($refValues)) {
+            return $this->statsCalculator->calculate($refValues);
+        }
+
+        $allObs = Observation::where('parameter_id', $param->parameter_id)->pluck('result_value')->toArray();
+        return $this->statsCalculator->calculate($allObs);
+    }
+
     public function certificate($program_id, $registration_id)
     {
         $program = PtProgram::findOrFail($program_id);
@@ -130,8 +150,7 @@ class ReportController extends Controller
             ->orderBy('submitted_at')
             ->get();
 
-        $rawValues = $observations->pluck('result_value')->toArray();
-        $stats = $this->statsCalculator->calculate($rawValues);
+        $stats = $this->getParameterStats($program, $parameter);
 
         $participantEvaluations = [];
         foreach ($observations as $obs) {
@@ -151,8 +170,7 @@ class ReportController extends Controller
         $paramStats = [];
 
         foreach ($parameters as $param) {
-            $vals = Observation::where('parameter_id', $param->parameter_id)->pluck('result_value')->toArray();
-            $paramStats[$param->parameter_id] = $this->statsCalculator->calculate($vals);
+            $paramStats[$param->parameter_id] = $this->getParameterStats($program, $param);
         }
 
         $matrix = [];

@@ -24,7 +24,7 @@
                 <select name="discipline" class="form-select form-select-sm">
                     <option value="">-- Filter by Discipline --</option>
                     @foreach($disciplines as $d)
-                        <option value="{{ $d }}" {{ request('discipline') == $d ? 'selected' : '' }}>{{ $d }}</option>
+                        <option value="{{ $d->id }}" {{ request('discipline') == $d->id ? 'selected' : '' }}>{{ $d->discipline_name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -61,7 +61,7 @@
                         @endif
                     </div>
                     <h6 class="fw-bold text-dark mb-2">{{ $program->program_name }}</h6>
-                    <p class="text-muted small mb-3"><i class="bx bx-atom me-1 text-info"></i> Discipline: <strong>{{ $program->discipline }}</strong></p>
+                    <p class="text-muted small mb-3"><i class="bx bx-atom me-1 text-info"></i> Discipline: <strong>{{ $program->discipline->discipline_name ?? 'N/A' }}</strong></p>
 
                     <div class="p-2 bg-light rounded border mb-3">
                         <div class="row text-center g-1">

@@ -79,6 +79,70 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Reference Test Replicates -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0 text-primary"><i class="bx bx-chart me-1"></i> Reference Test Replicates (ISO 13528 Baseline)</h6>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="addTestRunBtn">
+                        <i class="bx bx-plus me-1"></i> Add Test Run
+                    </button>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        Analyze the batch material multiple times and record your reference analysis results here. 
+                        These values will be averaged to establish the target assigned value for Z-score calculation.
+                    </p>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm align-middle" id="referenceTestsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 120px;">Test Run</th>
+                                    @foreach($program->parameters as $param)
+                                        <th>{{ $param->parameter_name }} @if($param->unit) ({{ $param->unit }}) @endif <span class="text-danger">*</span></th>
+                                    @endforeach
+                                    <th style="width: 80px;" class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="referenceTestsBody">
+                                @forelse($groupedReferenceValues ?? [] as $replicateNum => $values)
+                                    <tr class="test-run-row" data-run-index="{{ $replicateNum }}">
+                                        <td class="fw-bold text-muted ps-2">Run #{{ $replicateNum }}</td>
+                                        @foreach($program->parameters as $param)
+                                            @php
+                                                $valRecord = $values->where('parameter_id', $param->parameter_id)->first();
+                                                $val = $valRecord ? floatval($valRecord->reference_value) : '';
+                                            @endphp
+                                            <td>
+                                                <input type="number" step="any" name="reference_tests[{{ $replicateNum }}][{{ $param->parameter_id }}]" class="form-control form-control-sm" placeholder="Value" value="{{ $val }}" required>
+                                            </td>
+                                        @endforeach
+                                        <td class="text-center">
+                                            @if($replicateNum == 1)
+                                                <span class="text-muted small">-</span>
+                                            @else
+                                                <button type="button" class="btn btn-outline-danger btn-sm p-1 py-0 remove-run-btn"><i class="bx bx-trash"></i></button>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr class="test-run-row" data-run-index="1">
+                                        <td class="fw-bold text-muted ps-2">Run #1</td>
+                                        @foreach($program->parameters as $param)
+                                            <td>
+                                                <input type="number" step="any" name="reference_tests[1][{{ $param->parameter_id }}]" class="form-control form-control-sm" placeholder="Value" required>
+                                            </td>
+                                        @endforeach
+                                        <td class="text-center">
+                                            <span class="text-muted small">-</span>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Right Column: Homogeneity & Stability Testing -->
@@ -148,4 +212,90 @@
         </div>
     </div>
 </form>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var addBtn = document.getElementById('addTestRunBtn');
+    var body = document.getElementById('referenceTestsBody');
+    var parameters = [
+        @foreach($program->parameters as $param)
+            { id: {{ $param->parameter_id }}, name: "{{ $param->parameter_name }}" },
+        @endforeach
+    ];
+
+    // Bind remove event to any pre-loaded rows
+    body.querySelectorAll('.remove-run-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            btn.closest('tr').remove();
+            reindexRows();
+        });
+    });
+
+    if (addBtn && body) {
+        addBtn.addEventListener('click', function () {
+            var rows = body.querySelectorAll('.test-run-row');
+            var nextIndex = 1;
+            
+            if (rows.length > 0) {
+                var lastRow = rows[rows.length - 1];
+                nextIndex = parseInt(lastRow.getAttribute('data-run-index')) + 1;
+            }
+
+            var tr = document.createElement('tr');
+            tr.className = 'test-run-row';
+            tr.setAttribute('data-run-index', nextIndex);
+
+            var tdRun = document.createElement('td');
+            tdRun.className = 'fw-bold text-muted ps-2';
+            tdRun.innerText = 'Run #' + nextIndex;
+            tr.appendChild(tdRun);
+
+            parameters.forEach(function (param) {
+                var td = document.createElement('td');
+                var input = document.createElement('input');
+                input.type = 'number';
+                input.step = 'any';
+                input.name = 'reference_tests[' + nextIndex + '][' + param.id + ']';
+                input.className = 'form-control form-control-sm';
+                input.placeholder = 'Value';
+                input.required = true;
+                td.appendChild(input);
+                tr.appendChild(td);
+            });
+
+            var tdAction = document.createElement('td');
+            tdAction.className = 'text-center';
+            var removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'btn btn-outline-danger btn-sm p-1 py-0';
+            removeBtn.innerHTML = '<i class="bx bx-trash"></i>';
+            removeBtn.addEventListener('click', function () {
+                tr.remove();
+                reindexRows();
+            });
+            tdAction.appendChild(removeBtn);
+            tr.appendChild(tdAction);
+
+            body.appendChild(tr);
+        });
+    }
+
+    function reindexRows() {
+        var rows = body.querySelectorAll('.test-run-row');
+        rows.forEach(function (row, idx) {
+            var newIndex = idx + 1;
+            row.setAttribute('data-run-index', newIndex);
+            row.querySelector('td:first-child').innerText = 'Run #' + newIndex;
+
+            var inputs = row.querySelectorAll('input');
+            inputs.forEach(function (input, paramIdx) {
+                var paramId = parameters[paramIdx].id;
+                input.name = 'reference_tests[' + newIndex + '][' + paramId + ']';
+            });
+        });
+    }
+});
+</script>
+@endpush
 @endsection

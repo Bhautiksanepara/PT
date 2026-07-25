@@ -28,7 +28,7 @@ class UserAuthController extends Controller
             'laboratory_name' => 'required|string|max:255',
             'nabl_certificate_number' => 'nullable|string|max:100',
             'laboratory_type' => 'required|string|max:150',
-            'gst_number' => 'required|string|max:50',
+            'gst_number' => 'required|string|max:50|unique:labs,gst_number',
             'address' => 'required|string',
             'city' => 'required|string|max:100',
             'state' => 'required|string|max:100',

@@ -30,9 +30,10 @@
                 <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
                     <option value="">-- Filter Program Status --</option>
                     <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
-                    <option value="open" {{ request('status') == 'open' ? 'selected' : '' }}>Open (Active)</option>
-                    <option value="closed" {{ request('status') == 'closed' ? 'selected' : '' }}>Closed</option>
+                    <option value="open" {{ request('status') == 'open' ? 'selected' : '' }}>Open</option>
+                    <option value="reopen" {{ request('status') == 'reopen' ? 'selected' : '' }}>Reopen</option>
                     <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                    <option value="forcefully_closed" {{ request('status') == 'forcefully_closed' ? 'selected' : '' }}>Forcefully Closed</option>
                 </select>
             </div>
 
@@ -82,7 +83,7 @@
                                     <small class="text-muted">Scheme: {{ $program->scheme_code }}</small>
                                 @endif
                             </td>
-                            <td><span class="badge bg-light text-dark border">{{ $program->discipline ?? 'General' }}</span></td>
+                            <td><span class="badge bg-light text-dark border">{{ $program->discipline->discipline_name ?? 'General' }}</span></td>
                             <td class="fw-semibold">₹{{ number_format($program->program_fee, 2) }}</td>
                             <td><span class="badge bg-info text-dark rounded-pill">{{ $program->parameters_count }} Parameters</span></td>
                             <td>
@@ -95,14 +96,20 @@
                                 @endif
                             </td>
                             <td>
-                                @if($program->program_status === 'open')
-                                    <span class="badge bg-success">Open</span>
-                                @elseif($program->program_status === 'draft')
+                                @if($program->computed_program_status === 'draft')
                                     <span class="badge bg-secondary">Draft</span>
-                                @elseif($program->program_status === 'closed')
-                                    <span class="badge bg-danger">Closed</span>
+                                @elseif($program->computed_program_status === 'reopen')
+                                    <span class="badge bg-success">Reopened</span>
+                                @elseif($program->computed_program_status === 'forcefully_closed')
+                                    <span class="badge bg-danger">Forcefully Closed</span>
+                                @elseif($program->computed_program_status === 'upcoming')
+                                    <span class="badge bg-info">Upcoming (Reg)</span>
+                                @elseif($program->computed_program_status === 'open')
+                                    <span class="badge bg-success">Open (Reg)</span>
+                                @elseif($program->computed_program_status === 'active')
+                                    <span class="badge bg-warning text-dark">Active (Testing)</span>
                                 @else
-                                    <span class="badge bg-primary">Completed</span>
+                                    <span class="badge bg-danger">Closed (Eval)</span>
                                 @endif
                             </td>
                             <td class="text-end">
@@ -125,7 +132,7 @@
                                                 </button>
                                             </form>
                                         </li>
-                                        @if($program->program_status !== 'closed')
+                                        @if($program->program_status !== 'forcefully_closed')
                                             <li>
                                                 <form action="{{ route('admin.programs.close', $program->program_id) }}" method="POST" onsubmit="return confirm('Are you sure you want to close this program?')">
                                                     @csrf

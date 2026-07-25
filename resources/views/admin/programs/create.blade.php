@@ -27,15 +27,33 @@
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label small fw-semibold">Program Code <span class="text-danger">*</span></label>
-                            <input type="text" name="program_code" class="form-control @error('program_code') is-invalid @enderror" value="{{ old('program_code') }}" placeholder="e.g. PT-CHEM-2026-01" required>
-                            @error('program_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <label class="form-label small fw-semibold">Discipline <span class="text-danger">*</span></label>
+                            <select name="discipline_id" id="discipline-select" class="form-select @error('discipline_id') is-invalid @enderror" required>
+                                <option value="">-- Select Discipline --</option>
+                                @foreach($disciplines as $disc)
+                                    <option value="{{ $disc->id }}" data-code="{{ $disc->short_code }}">{{ $disc->discipline_name }}</option>
+                                @endforeach
+                                <option value="other">Other (Manual Entry)</option>
+                            </select>
+                            @error('discipline_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label small fw-semibold">Discipline <span class="text-danger">*</span></label>
-                            <input type="text" name="discipline" class="form-control @error('discipline') is-invalid @enderror" value="{{ old('discipline') }}" placeholder="e.g. Chemical / Biological / Mechanical" required>
-                            @error('discipline')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            <label class="form-label small fw-semibold">Program Code <span class="text-danger">*</span></label>
+                            <input type="text" name="program_code" id="program-code-input" class="form-control @error('program_code') is-invalid @enderror" value="{{ old('program_code') }}" placeholder="Auto-generated on selection" required>
+                            @error('program_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+
+                        <div class="col-md-6 d-none" id="custom-discipline-container">
+                            <label class="form-label small fw-semibold">Custom Discipline Name <span class="text-danger">*</span></label>
+                            <input type="text" name="custom_discipline" id="custom-discipline-input" class="form-control @error('custom_discipline') is-invalid @enderror" placeholder="e.g. Environmental Testing">
+                            @error('custom_discipline')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+
+                        <div class="col-md-6 d-none" id="custom-short-code-container">
+                            <label class="form-label small fw-semibold">Short Code (Max 10 chars) <span class="text-danger">*</span></label>
+                            <input type="text" name="custom_short_code" id="custom-short-code-input" class="form-control @error('custom_short_code') is-invalid @enderror" placeholder="e.g. ENV" maxlength="10">
+                            @error('custom_short_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
 
                         <div class="col-12">
@@ -103,21 +121,12 @@
                 </div>
                 <div class="card-body">
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold">Registration Status</label>
-                        <select name="registration_status" class="form-select">
-                            <option value="upcoming" {{ old('registration_status') == 'upcoming' ? 'selected' : '' }}>Upcoming</option>
-                            <option value="active" {{ old('registration_status', 'active') == 'active' ? 'selected' : '' }}>Active (Open for Reg)</option>
-                            <option value="closed" {{ old('registration_status') == 'closed' ? 'selected' : '' }}>Closed</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
                         <label class="form-label small fw-semibold">Program Status</label>
                         <select name="program_status" class="form-select">
+                            <option value="" {{ old('program_status') === null || old('program_status') === '' ? 'selected' : '' }}>-- Automatic (Date-Based) --</option>
                             <option value="draft" {{ old('program_status') == 'draft' ? 'selected' : '' }}>Draft</option>
-                            <option value="open" {{ old('program_status', 'open') == 'open' ? 'selected' : '' }}>Open (In Progress)</option>
-                            <option value="closed" {{ old('program_status') == 'closed' ? 'selected' : '' }}>Closed</option>
-                            <option value="completed" {{ old('program_status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                            <option value="reopen" {{ old('program_status') == 'reopen' ? 'selected' : '' }}>Reopen</option>
+                            <option value="forcefully_closed" {{ old('program_status') == 'forcefully_closed' ? 'selected' : '' }}>Forcefully Closed</option>
                         </select>
                     </div>
                 </div>
@@ -172,27 +181,132 @@
 @push('scripts')
 <script>
     document.addEventListener("DOMContentLoaded", function() {
+        const disciplines = @json($disciplines);
         let paramIndex = 0;
+
         const tbody = document.getElementById("parameters-tbody");
         const addBtn = document.getElementById("add-parameter-btn");
+        const disciplineSelect = document.getElementById("discipline-select");
+        const programCodeInput = document.getElementById("program-code-input");
+        const startDateInput = document.querySelector('input[name="registration_start_date"]');
 
+        const customDiscContainer = document.getElementById("custom-discipline-container");
+        const customShortContainer = document.getElementById("custom-short-code-container");
+        const customDiscInput = document.getElementById("custom-discipline-input");
+        const customShortInput = document.getElementById("custom-short-code-input");
+
+        // 1. Handle Discipline Toggle & Custom Fields
+        disciplineSelect.addEventListener("change", function() {
+            const val = this.value;
+            if (val === 'other') {
+                customDiscContainer.classList.remove("d-none");
+                customShortContainer.classList.remove("d-none");
+                customDiscInput.setAttribute("required", "required");
+                customShortInput.setAttribute("required", "required");
+            } else {
+                customDiscContainer.classList.add("d-none");
+                customShortContainer.classList.add("d-none");
+                customDiscInput.removeAttribute("required");
+                customShortInput.removeAttribute("required");
+            }
+            updateProgramCode();
+            refreshAllParameterDropdowns();
+        });
+
+        customShortInput.addEventListener("input", updateProgramCode);
+        startDateInput.addEventListener("change", updateProgramCode);
+
+        // 2. Dynamic Program Code Generation via Fetch
+        function updateProgramCode() {
+            const disciplineId = disciplineSelect.value;
+            let year = new Date().getFullYear();
+            if (startDateInput.value) {
+                year = new Date(startDateInput.value).getFullYear();
+            }
+
+            if (!disciplineId) {
+                programCodeInput.value = '';
+                return;
+            }
+
+            let url = `{{ route('admin.programs.next-code') }}?discipline_id=${disciplineId}&year=${year}`;
+            if (disciplineId === 'other') {
+                const customCode = customShortInput.value || 'TEMP';
+                url += `&custom_short_code=${encodeURIComponent(customCode)}`;
+            }
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.next_code) {
+                        programCodeInput.value = data.next_code;
+                    }
+                })
+                .catch(err => console.error("Error generating code:", err));
+        }
+
+        // 3. Dynamic Parameter Rows
         function addParameterRow(name = '', method = '', unit = '') {
             const tr = document.createElement("tr");
             tr.innerHTML = `
                 <td>
-                    <input type="text" name="parameters[${paramIndex}][parameter_name]" class="form-control form-control-sm" placeholder="e.g. pH Value" value="${name}" required>
+                    <select class="form-select form-select-sm parameter-select" required>
+                        <option value="">-- Select Parameter --</option>
+                        <option value="other">Other (Manual Entry)</option>
+                    </select>
+                    <input type="text" name="parameters[${paramIndex}][parameter_name]" class="form-control form-control-sm mt-1 d-none custom-parameter-name" placeholder="e.g. pH Value" value="${name}">
                 </td>
                 <td>
-                    <input type="text" name="parameters[${paramIndex}][test_method]" class="form-control form-control-sm" placeholder="e.g. IS 3025 (Part 11)" value="${method}">
+                    <input type="text" name="parameters[${paramIndex}][test_method]" class="form-control form-control-sm test-method-input" placeholder="e.g. IS 3025 (Part 11)" value="${method}">
                 </td>
                 <td>
-                    <input type="text" name="parameters[${paramIndex}][unit]" class="form-control form-control-sm" placeholder="e.g. pH Units" value="${unit}">
+                    <input type="text" name="parameters[${paramIndex}][unit]" class="form-control form-control-sm unit-input" placeholder="e.g. pH Units" value="${unit}">
                 </td>
                 <td class="text-center">
                     <button type="button" class="btn btn-outline-danger btn-sm remove-row-btn"><i class="bx bx-trash"></i></button>
                 </td>
             `;
             tbody.appendChild(tr);
+
+            const select = tr.querySelector(".parameter-select");
+            const customInput = tr.querySelector(".custom-parameter-name");
+            const methodInput = tr.querySelector(".test-method-input");
+            const unitInput = tr.querySelector(".unit-input");
+
+            // Populate current discipline options
+            populateParameterSelect(select);
+
+            select.addEventListener("change", function() {
+                const val = this.value;
+                if (val === 'other') {
+                    customInput.classList.remove("d-none");
+                    customInput.setAttribute("required", "required");
+                    customInput.value = '';
+                    methodInput.value = '';
+                    unitInput.value = '';
+                } else if (val) {
+                    customInput.classList.add("d-none");
+                    customInput.removeAttribute("required");
+                    customInput.value = val;
+
+                    // Autofill method and unit
+                    const discId = disciplineSelect.value;
+                    const selectedDisc = disciplines.find(d => d.id == discId);
+                    if (selectedDisc) {
+                        const paramObj = selectedDisc.parameters.find(p => p.parameter_name === val);
+                        if (paramObj) {
+                            methodInput.value = paramObj.test_method || '';
+                            unitInput.value = paramObj.unit || '';
+                        }
+                    }
+                } else {
+                    customInput.classList.add("d-none");
+                    customInput.removeAttribute("required");
+                    customInput.value = '';
+                    methodInput.value = '';
+                    unitInput.value = '';
+                }
+            });
 
             tr.querySelector(".remove-row-btn").addEventListener("click", function() {
                 if (tbody.children.length > 1) {
@@ -203,6 +317,44 @@
             });
 
             paramIndex++;
+        }
+
+        function populateParameterSelect(selectEl) {
+            const discId = disciplineSelect.value;
+            // Clear current options except first and last
+            const options = Array.from(selectEl.options);
+            options.slice(1, -1).forEach(opt => opt.remove());
+
+            if (discId && discId !== 'other') {
+                const selectedDisc = disciplines.find(d => d.id == discId);
+                if (selectedDisc && selectedDisc.parameters) {
+                    selectedDisc.parameters.forEach(p => {
+                        const opt = document.createElement("option");
+                        opt.value = p.parameter_name;
+                        opt.textContent = p.parameter_name;
+                        // Insert before the last option ("Other")
+                        selectEl.insertBefore(opt, selectEl.options[selectEl.options.length - 1]);
+                    });
+                }
+            }
+        }
+
+        function refreshAllParameterDropdowns() {
+            const selects = tbody.querySelectorAll(".parameter-select");
+            selects.forEach(select => {
+                const customInput = select.parentElement.querySelector(".custom-parameter-name");
+                const methodInput = select.parentElement.parentElement.querySelector(".test-method-input");
+                const unitInput = select.parentElement.parentElement.querySelector(".unit-input");
+                
+                select.value = "";
+                customInput.classList.add("d-none");
+                customInput.removeAttribute("required");
+                customInput.value = "";
+                methodInput.value = "";
+                unitInput.value = "";
+
+                populateParameterSelect(select);
+            });
         }
 
         // Add initial row

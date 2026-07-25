@@ -5,7 +5,14 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1">ISO 13528 Evaluation: {{ $parameter->parameter_name }}</h4>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <h4 class="fw-bold mb-1">ISO 13528 Evaluation: {{ $parameter->parameter_name }}</h4>
+            @if($isReferenceBased)
+                <span class="badge bg-info"><i class="bx bx-award me-1"></i> Admin Reference Baseline</span>
+            @else
+                <span class="badge bg-secondary"><i class="bx bx-group me-1"></i> Participant Consensus Baseline</span>
+            @endif
+        </div>
         <p class="text-muted small mb-0">Program: {{ $program->program_code }} — {{ $program->program_name }}</p>
     </div>
     <div class="d-flex gap-2">
@@ -25,7 +32,7 @@
 <div class="row g-3 mb-4">
     <div class="col-md-2">
         <div class="card card-stat text-center py-3">
-            <small class="text-muted fw-semibold">Submissions (n)</small>
+            <small class="text-muted fw-semibold">{{ $isReferenceBased ? 'Ref Replicates' : 'Submissions (n)' }}</small>
             <h3 class="fw-bold text-dark mb-0 mt-1">{{ $stats['count'] }}</h3>
         </div>
     </div>

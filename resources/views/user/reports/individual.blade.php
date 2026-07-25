@@ -127,7 +127,7 @@
                     <div class="col-md-6 ps-md-3">
                         <small class="text-muted d-block fw-semibold text-uppercase micro-text">PT Scheme & Sample Identifier</small>
                         <h6 class="fw-bold text-primary mb-1">{{ $program->program_code }} — {{ $program->program_name }}</h6>
-                        <small class="text-dark d-block fw-semibold">Discipline: {{ $program->discipline }}</small>
+                        <small class="text-dark d-block fw-semibold">Discipline: {{ $program->discipline->discipline_name ?? 'N/A' }}</small>
                         <small class="text-dark d-block">Registration #: <strong>{{ $registration->registration_number }}</strong></small>
                         <small class="text-dark d-block">Assigned Sample ID: <strong class="text-primary">{{ $sample->sample_code ?? 'N/A' }}</strong></small>
                     </div>

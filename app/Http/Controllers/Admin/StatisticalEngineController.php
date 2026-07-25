@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PtProgram;
 use App\Models\ProgramParameter;
 use App\Models\Observation;
+use App\Models\SampleBatch;
 use App\Services\StatsCalculatorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -47,14 +48,34 @@ class StatisticalEngineController extends Controller
             ->orderBy('submitted_at')
             ->get();
 
-        // Extract numeric results
-        $rawValues = $observations->pluck('result_value')->toArray();
+        // Check if there is a sample batch with admin reference values for this parameter
+        $batch = SampleBatch::where('program_id', $program->program_id)->first();
+        $refValues = [];
+        if ($batch) {
+            $refValues = DB::table('batch_parameter_reference_values')
+                ->where('batch_id', $batch->batch_id)
+                ->where('parameter_id', $parameter->parameter_id)
+                ->pluck('reference_value')
+                ->map('floatval')
+                ->toArray();
+        }
 
-        // Calculate ISO 13528 Statistics
-        $stats = $this->statsCalculator->calculate($rawValues);
+        $isReferenceBased = !empty($refValues);
 
-        $assignedValue = $stats['robust_mean'];
-        $targetSd = $stats['robust_sd'];
+        if ($isReferenceBased) {
+            // Calculate statistics based on Admin's reference replicates
+            $stats = $this->statsCalculator->calculate($refValues);
+            $assignedValue = $stats['robust_mean'];
+            $targetSd = $stats['robust_sd'];
+            $stats['participant_count'] = $observations->count();
+        } else {
+            // Fallback: Consensus statistics based on participant observations
+            $rawValues = $observations->pluck('result_value')->toArray();
+            $stats = $this->statsCalculator->calculate($rawValues);
+            $assignedValue = $stats['robust_mean'];
+            $targetSd = $stats['robust_sd'];
+            $stats['participant_count'] = $stats['count'];
+        }
 
         // Evaluate Z-Score for each participant
         $participantResults = [];
@@ -105,7 +126,7 @@ class StatisticalEngineController extends Controller
             'satisfactory' => $satisfactoryCount,
             'warning'      => $warningCount,
             'action'       => $actionCount,
-            'pass_rate'    => $stats['count'] > 0 ? round(($satisfactoryCount / $stats['count']) * 100, 1) : 0,
+            'pass_rate'    => $stats['participant_count'] > 0 ? round(($satisfactoryCount / $stats['participant_count']) * 100, 1) : 0,
         ];
 
         return view('admin.stats.parameter', compact(
@@ -116,7 +137,8 @@ class StatisticalEngineController extends Controller
             'summaryCounts',
             'chartLabs',
             'chartZScores',
-            'chartColors'
+            'chartColors',
+            'isReferenceBased'
         ));
     }
 
@@ -130,11 +152,32 @@ class StatisticalEngineController extends Controller
             ->orderBy('submitted_at')
             ->get();
 
-        $rawValues = $observations->pluck('result_value')->toArray();
-        $stats = $this->statsCalculator->calculate($rawValues);
+        // Check if there is a sample batch with admin reference values for this parameter
+        $batch = SampleBatch::where('program_id', $program->program_id)->first();
+        $refValues = [];
+        if ($batch) {
+            $refValues = DB::table('batch_parameter_reference_values')
+                ->where('batch_id', $batch->batch_id)
+                ->where('parameter_id', $parameter->parameter_id)
+                ->pluck('reference_value')
+                ->map('floatval')
+                ->toArray();
+        }
 
-        $assignedValue = $stats['robust_mean'];
-        $targetSd = $stats['robust_sd'];
+        $isReferenceBased = !empty($refValues);
+
+        if ($isReferenceBased) {
+            $stats = $this->statsCalculator->calculate($refValues);
+            $assignedValue = $stats['robust_mean'];
+            $targetSd = $stats['robust_sd'];
+            $stats['participant_count'] = $observations->count();
+        } else {
+            $rawValues = $observations->pluck('result_value')->toArray();
+            $stats = $this->statsCalculator->calculate($rawValues);
+            $assignedValue = $stats['robust_mean'];
+            $targetSd = $stats['robust_sd'];
+            $stats['participant_count'] = $stats['count'];
+        }
 
         $headers = [
             "Content-type"        => "text/csv",
@@ -144,7 +187,7 @@ class StatisticalEngineController extends Controller
             "Expires"             => "0"
         ];
 
-        $callback = function () use ($program, $parameter, $stats, $observations, $assignedValue, $targetSd) {
+        $callback = function () use ($program, $parameter, $stats, $observations, $assignedValue, $targetSd, $isReferenceBased) {
             $file = fopen('php://output', 'w');
 
             // Header info
@@ -153,12 +196,14 @@ class StatisticalEngineController extends Controller
             fputcsv($file, ['Program Name', $program->program_name]);
             fputcsv($file, ['Parameter Name', $parameter->parameter_name]);
             fputcsv($file, ['Standard Used', 'ISO 13528 Algorithm A']);
+            fputcsv($file, ['Calculation Basis', $isReferenceBased ? 'Admin Reference Baseline (ISO 13528)' : 'Participant Consensus Baseline']);
             fputcsv($file, []);
 
             // Summary Stats Block
             fputcsv($file, ['STATISTICAL SUMMARY METRICS']);
             fputcsv($file, ['Metric', 'Value']);
-            fputcsv($file, ['Total Submissions (n)', $stats['count']]);
+            fputcsv($file, ['Total Reference Replicates' , $isReferenceBased ? $stats['count'] : 'N/A']);
+            fputcsv($file, ['Total Participant Submissions (n)', $stats['participant_count']]);
             fputcsv($file, ['Classical Mean', $stats['mean']]);
             fputcsv($file, ['Median', $stats['median']]);
             fputcsv($file, ['Classical Standard Deviation (SD)', $stats['std_dev']]);
@@ -202,9 +247,27 @@ class StatisticalEngineController extends Controller
         // 1. Loop through parameters and save ISO 13528 stats into `statistical_results` table
         foreach ($program->parameters as $parameter) {
             $obsList = Observation::where('parameter_id', $parameter->parameter_id)->get();
-            $rawValues = $obsList->pluck('result_value')->toArray();
 
-            $stats = $this->statsCalculator->calculate($rawValues);
+            // Check if there is a sample batch with admin reference values for this parameter
+            $batch = SampleBatch::where('program_id', $program->program_id)->first();
+            $refValues = [];
+            if ($batch) {
+                $refValues = DB::table('batch_parameter_reference_values')
+                    ->where('batch_id', $batch->batch_id)
+                    ->where('parameter_id', $parameter->parameter_id)
+                    ->pluck('reference_value')
+                    ->map('floatval')
+                    ->toArray();
+            }
+
+            $isReferenceBased = !empty($refValues);
+
+            if ($isReferenceBased) {
+                $stats = $this->statsCalculator->calculate($refValues);
+            } else {
+                $rawValues = $obsList->pluck('result_value')->toArray();
+                $stats = $this->statsCalculator->calculate($rawValues);
+            }
 
             DB::table('statistical_results')->updateOrInsert(
                 [
@@ -299,7 +362,7 @@ class StatisticalEngineController extends Controller
 
         // Update Program Status to Completed & Registration Status to Closed
         $program->update([
-            'program_status' => 'completed',
+            'program_status' => 'forcefully_closed',
             'registration_status' => 'closed',
         ]);
 

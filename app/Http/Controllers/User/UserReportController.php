@@ -65,7 +65,7 @@ class UserReportController extends Controller
             ->where('registration_id', $registration->registration_id)
             ->exists();
 
-        if ($program->program_status !== 'completed' && !$hasReports) {
+        if ($program->program_status !== 'forcefully_closed' && !$hasReports) {
             return redirect()->route('lab.dashboard')->with('error', 'PT evaluation results and reports for this program have not been published by the Admin yet.');
         }
 
@@ -160,7 +160,7 @@ class UserReportController extends Controller
             ->where('registration_id', $registration->registration_id)
             ->exists();
 
-        if ($program->program_status !== 'completed' && !$hasReports) {
+        if ($program->program_status !== 'forcefully_closed' && !$hasReports) {
             return redirect()->route('lab.dashboard')->with('error', 'Participation Certificate for this program has not been published by the Admin yet.');
         }
 

@@ -17,7 +17,7 @@ class UserDashboardController extends Controller
 
         // 1. Active PT Programs open for registration
         $activePrograms = PtProgram::with('parameters')
-            ->where('program_status', 'open')
+            ->where('program_status', 'reopen')
             ->where('registration_status', 'active')
             ->orderBy('registration_end_date', 'asc')
             ->get();

@@ -6,7 +6,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h4 class="fw-bold mb-1"><i class="bx bx-archive text-secondary me-1"></i> Archive Vault: {{ $program->program_code }}</h4>
-        <p class="text-muted small mb-0">{{ $program->program_name }} (Discipline: {{ $program->discipline }})</p>
+        <p class="text-muted small mb-0">{{ $program->program_name }} (Discipline: {{ $program->discipline->discipline_name ?? 'N/A' }})</p>
     </div>
     <div class="d-flex gap-2">
         <a href="{{ route('admin.reports.master', $program->program_id) }}" class="btn btn-outline-primary btn-sm">

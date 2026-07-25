@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\PtProgram;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -14,8 +15,44 @@ class DashboardController extends Controller
         // 1. Total Participants
         $totalParticipants = DB::table('labs')->count();
 
-        // 2. Active Programs
-        $activePrograms = DB::table('pt_programs')->where('program_status', 'open')->count();
+        // 2. Load all programs to compute status values in PHP dynamically
+        $programsList = PtProgram::all();
+        
+        $activePrograms = 0;
+        $pendingReports = 0;
+        
+        $draftCount = 0;
+        $openCount = 0;
+        $reopenCount = 0;
+        $completedCount = 0;
+        $forceClosedCount = 0;
+
+        foreach ($programsList as $prog) {
+            $status = $prog->computed_program_status;
+            
+            if ($status === 'draft') {
+                $draftCount++;
+            } elseif ($status === 'reopen') {
+                $reopenCount++;
+            } elseif ($status === 'forcefully_closed') {
+                $forceClosedCount++;
+            } elseif ($status === 'completed' || $status === 'closed') {
+                $completedCount++;
+            } else {
+                // open, active, upcoming count as Open
+                $openCount++;
+            }
+
+            // Count Active programs (open for registration or active observation submission)
+            if (in_array($status, ['open', 'reopen', 'active', 'upcoming'])) {
+                $activePrograms++;
+            }
+
+            // Count Pending Reports (closed / forcefully closed schemes without observations finalized yet)
+            if (in_array($status, ['closed', 'forcefully_closed'])) {
+                $pendingReports++;
+            }
+        }
 
         // 3. Total Revenue
         $totalRevenue = DB::table('payments')->where('payment_status', 'success')->sum('final_amount');
@@ -26,15 +63,13 @@ class DashboardController extends Controller
         // 5. Submitted Observations
         $submittedObservations = DB::table('observations')->whereNotNull('submitted_at')->count();
 
-        // 6. Pending Reports
-        $pendingReports = DB::table('pt_programs')->where('program_status', 'closed')->count();
-
-        // Program Status counts for Donut Chart
+        // Program Status counts for Donut Chart (exactly the 5 key statuses)
         $programStatusCounts = [
-            'draft' => DB::table('pt_programs')->where('program_status', 'draft')->count(),
-            'open' => DB::table('pt_programs')->where('program_status', 'open')->count(),
-            'closed' => DB::table('pt_programs')->where('program_status', 'closed')->count(),
-            'completed' => DB::table('pt_programs')->where('program_status', 'completed')->count(),
+            'draft' => $draftCount,
+            'open' => $openCount,
+            'reopen' => $reopenCount,
+            'completed' => $completedCount,
+            'forcefully_closed' => $forceClosedCount,
         ];
 
         // 7. Dynamic Monthly Registrations & Revenue Trend (Filterable by Year / 12-Month Rolling)

@@ -13,7 +13,8 @@ class PtPlanController extends Controller
     public function index()
     {
         $plans = PtPlan::with(['program', 'coordinator'])->orderBy('created_at', 'desc')->paginate(10);
-        return view('admin.plans.index', compact('plans'));
+        $programsWithoutPlans = PtProgram::doesntHave('plan')->orderBy('program_code')->get();
+        return view('admin.plans.index', compact('plans', 'programsWithoutPlans'));
     }
 
     public function create($program_id)

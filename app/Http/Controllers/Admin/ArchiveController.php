@@ -14,19 +14,23 @@ class ArchiveController extends Controller
 {
     public function index(Request $request)
     {
-        $query = PtProgram::with(['parameters', 'registrations.lab']);
+        $query = PtProgram::with(['parameters', 'registrations.lab', 'discipline']);
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('program_code', 'like', "%{$search}%")
                   ->orWhere('program_name', 'like', "%{$search}%")
-                  ->orWhere('discipline', 'like', "%{$search}%");
+                  ->orWhereHas('discipline', function ($dq) use ($search) {
+                      $dq->where('discipline_name', 'like', "%{$search}%");
+                  });
             });
         }
 
         if ($request->filled('discipline')) {
-            $query->where('discipline', $request->discipline);
+            $query->whereHas('discipline', function ($dq) use ($request) {
+                $dq->where('discipline_id', $request->discipline);
+            });
         }
 
         if ($request->filled('year')) {
@@ -42,7 +46,8 @@ class ArchiveController extends Controller
             ->pluck('year')
             ->toArray();
 
-        $disciplines = PtProgram::select('discipline')->distinct()->pluck('discipline')->toArray();
+        // Load all disciplines for the filter dropdown from the disciplines master table
+        $disciplines = \App\Models\DisciplineMaster::orderBy('discipline_name')->get();
 
         return view('admin.archive.index', compact('programs', 'availableYears', 'disciplines'));
     }
@@ -51,6 +56,7 @@ class ArchiveController extends Controller
     {
         $program = PtProgram::with([
             'parameters',
+            'discipline',
             'plan',
             'batches',
             'registrations.lab',

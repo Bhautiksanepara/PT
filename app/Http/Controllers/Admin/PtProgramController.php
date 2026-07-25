@@ -16,19 +16,49 @@ class PtProgramController extends Controller
 {
     public function index(Request $request)
     {
-        $query = PtProgram::withCount(['parameters', 'registrations']);
+        $query = PtProgram::with(['discipline'])->withCount(['parameters', 'registrations']);
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('program_code', 'like', "%{$search}%")
                   ->orWhere('program_name', 'like', "%{$search}%")
-                  ->orWhere('discipline', 'like', "%{$search}%");
+                  ->orWhereHas('discipline', function ($dq) use ($search) {
+                      $dq->where('discipline_name', 'like', "%{$search}%");
+                  });
             });
         }
 
         if ($request->filled('status')) {
-            $query->where('program_status', $request->status);
+            $status = $request->status;
+            $today = date('Y-m-d');
+            if ($status === 'draft') {
+                $query->where('program_status', 'draft');
+            } elseif ($status === 'reopen') {
+                $query->where('program_status', 'reopen');
+            } elseif ($status === 'forcefully_closed') {
+                $query->where('program_status', 'forcefully_closed');
+            } elseif ($status === 'open') {
+                $query->where(function($q) use ($today) {
+                    $q->where('program_status', 'open')
+                      ->orWhere(function($sub) use ($today) {
+                          $sub->whereNull('program_status')
+                              ->whereNotNull('registration_start_date')
+                              ->whereNotNull('registration_end_date')
+                              ->where('registration_start_date', '<=', $today)
+                              ->where('registration_end_date', '>=', $today);
+                      });
+                });
+            } elseif ($status === 'completed') {
+                $query->where(function($q) use ($today) {
+                    $q->where('program_status', 'completed')
+                      ->orWhere(function($sub) use ($today) {
+                          $sub->whereNull('program_status')
+                              ->whereNotNull('submission_deadline')
+                              ->where('submission_deadline', '<', $today);
+                      });
+                });
+            }
         }
 
         if ($request->filled('registration_status')) {
@@ -42,7 +72,8 @@ class PtProgramController extends Controller
 
     public function create()
     {
-        return view('admin.programs.create');
+        $disciplines = \App\Models\DisciplineMaster::with('parameters')->orderBy('discipline_name')->get();
+        return view('admin.programs.create', compact('disciplines'));
     }
 
     public function store(Request $request)
@@ -50,7 +81,9 @@ class PtProgramController extends Controller
         $validated = $request->validate([
             'program_code' => 'required|string|max:50|unique:pt_programs,program_code',
             'program_name' => 'required|string|max:255',
-            'discipline' => 'nullable|string|max:150',
+            'discipline_id' => 'required|string',
+            'custom_discipline' => 'required_if:discipline_id,other|nullable|string|max:150',
+            'custom_short_code' => 'required_if:discipline_id,other|nullable|string|max:10',
             'scheme_code' => 'nullable|string|max:50',
             'description' => 'nullable|string',
             'program_fee' => 'required|numeric|min:0',
@@ -59,8 +92,7 @@ class PtProgramController extends Controller
             'dispatch_date' => 'nullable|date',
             'submission_deadline' => 'nullable|date',
             'report_date' => 'nullable|date',
-            'registration_status' => 'required|in:upcoming,active,closed',
-            'program_status' => 'required|in:draft,open,closed,completed',
+            'program_status' => 'nullable|in:draft,reopen,forcefully_closed',
             'parameters' => 'required|array|min:1',
             'parameters.*.parameter_name' => 'required|string|max:150',
             'parameters.*.test_method' => 'nullable|string|max:150',
@@ -68,10 +100,22 @@ class PtProgramController extends Controller
         ]);
 
         DB::transaction(function () use ($validated, $request) {
+            $disciplineId = $validated['discipline_id'];
+            if ($disciplineId === 'other') {
+                $disciplineName = trim($validated['custom_discipline']);
+                $shortCode = strtoupper(trim($validated['custom_short_code']));
+                
+                $disc = \App\Models\DisciplineMaster::firstOrCreate(
+                    ['discipline_name' => $disciplineName],
+                    ['short_code' => $shortCode]
+                );
+                $disciplineId = $disc->id;
+            }
+
             $program = PtProgram::create([
                 'program_code' => $validated['program_code'],
                 'program_name' => $validated['program_name'],
-                'discipline' => $validated['discipline'] ?? null,
+                'discipline_id' => $disciplineId,
                 'scheme_code' => $validated['scheme_code'] ?? null,
                 'description' => $validated['description'] ?? null,
                 'program_fee' => $validated['program_fee'],
@@ -80,18 +124,29 @@ class PtProgramController extends Controller
                 'dispatch_date' => $validated['dispatch_date'] ?? null,
                 'submission_deadline' => $validated['submission_deadline'] ?? null,
                 'report_date' => $validated['report_date'] ?? null,
-                'registration_status' => $validated['registration_status'],
-                'program_status' => $validated['program_status'],
+                'program_status' => $validated['program_status'] ?: null,
                 'created_by' => Auth::guard('admin')->id(),
             ]);
 
             foreach ($validated['parameters'] as $paramData) {
                 if (!empty($paramData['parameter_name'])) {
+                    $paramName = trim($paramData['parameter_name']);
+                    $testMethod = trim($paramData['test_method'] ?? '');
+                    $unit = trim($paramData['unit'] ?? '');
+
+                    // Auto save to master parameters
+                    \App\Models\ParameterMaster::firstOrCreate([
+                        'discipline_id' => $disciplineId,
+                        'parameter_name' => $paramName,
+                        'test_method' => $testMethod ?: null,
+                        'unit' => $unit ?: null,
+                    ]);
+
                     ProgramParameter::create([
                         'program_id' => $program->program_id,
-                        'parameter_name' => $paramData['parameter_name'],
-                        'test_method' => $paramData['test_method'] ?? null,
-                        'unit' => $paramData['unit'] ?? null,
+                        'parameter_name' => $paramName,
+                        'test_method' => $testMethod ?: null,
+                        'unit' => $unit ?: null,
                         'created_at' => now(),
                     ]);
                 }
@@ -110,7 +165,8 @@ class PtProgramController extends Controller
     public function edit($id)
     {
         $program = PtProgram::with('parameters')->findOrFail($id);
-        return view('admin.programs.edit', compact('program'));
+        $disciplines = \App\Models\DisciplineMaster::with('parameters')->orderBy('discipline_name')->get();
+        return view('admin.programs.edit', compact('program', 'disciplines'));
     }
 
     public function update(Request $request, $id)
@@ -120,7 +176,9 @@ class PtProgramController extends Controller
         $validated = $request->validate([
             'program_code' => 'required|string|max:50|unique:pt_programs,program_code,' . $id . ',program_id',
             'program_name' => 'required|string|max:255',
-            'discipline' => 'nullable|string|max:150',
+            'discipline_id' => 'required|string',
+            'custom_discipline' => 'required_if:discipline_id,other|nullable|string|max:150',
+            'custom_short_code' => 'required_if:discipline_id,other|nullable|string|max:10',
             'scheme_code' => 'nullable|string|max:50',
             'description' => 'nullable|string',
             'program_fee' => 'required|numeric|min:0',
@@ -129,8 +187,7 @@ class PtProgramController extends Controller
             'dispatch_date' => 'nullable|date',
             'submission_deadline' => 'nullable|date',
             'report_date' => 'nullable|date',
-            'registration_status' => 'required|in:upcoming,active,closed',
-            'program_status' => 'required|in:draft,open,closed,completed',
+            'program_status' => 'nullable|in:draft,reopen,forcefully_closed',
             'parameters' => 'required|array|min:1',
             'parameters.*.parameter_name' => 'required|string|max:150',
             'parameters.*.test_method' => 'nullable|string|max:150',
@@ -138,10 +195,22 @@ class PtProgramController extends Controller
         ]);
 
         DB::transaction(function () use ($program, $validated) {
+            $disciplineId = $validated['discipline_id'];
+            if ($disciplineId === 'other') {
+                $disciplineName = trim($validated['custom_discipline']);
+                $shortCode = strtoupper(trim($validated['custom_short_code']));
+                
+                $disc = \App\Models\DisciplineMaster::firstOrCreate(
+                    ['discipline_name' => $disciplineName],
+                    ['short_code' => $shortCode]
+                );
+                $disciplineId = $disc->id;
+            }
+
             $program->update([
                 'program_code' => $validated['program_code'],
                 'program_name' => $validated['program_name'],
-                'discipline' => $validated['discipline'] ?? null,
+                'discipline_id' => $disciplineId,
                 'scheme_code' => $validated['scheme_code'] ?? null,
                 'description' => $validated['description'] ?? null,
                 'program_fee' => $validated['program_fee'],
@@ -150,8 +219,7 @@ class PtProgramController extends Controller
                 'dispatch_date' => $validated['dispatch_date'] ?? null,
                 'submission_deadline' => $validated['submission_deadline'] ?? null,
                 'report_date' => $validated['report_date'] ?? null,
-                'registration_status' => $validated['registration_status'],
-                'program_status' => $validated['program_status'],
+                'program_status' => $validated['program_status'] ?: null,
             ]);
 
             // Sync Parameters: remove old and insert updated ones if observations don't exist
@@ -162,11 +230,23 @@ class PtProgramController extends Controller
 
                 foreach ($validated['parameters'] as $paramData) {
                     if (!empty($paramData['parameter_name'])) {
+                        $paramName = trim($paramData['parameter_name']);
+                        $testMethod = trim($paramData['test_method'] ?? '');
+                        $unit = trim($paramData['unit'] ?? '');
+
+                        // Auto save to master parameters
+                        \App\Models\ParameterMaster::firstOrCreate([
+                            'discipline_id' => $disciplineId,
+                            'parameter_name' => $paramName,
+                            'test_method' => $testMethod ?: null,
+                            'unit' => $unit ?: null,
+                        ]);
+
                         ProgramParameter::create([
                             'program_id' => $program->program_id,
-                            'parameter_name' => $paramData['parameter_name'],
-                            'test_method' => $paramData['test_method'] ?? null,
-                            'unit' => $paramData['unit'] ?? null,
+                            'parameter_name' => $paramName,
+                            'test_method' => $testMethod ?: null,
+                            'unit' => $unit ?: null,
                             'created_at' => now(),
                         ]);
                     }
@@ -174,8 +254,8 @@ class PtProgramController extends Controller
             }
         });
 
-        // Auto-freeze statistics and lock tables if program status is closed or completed
-        if (in_array($validated['program_status'], ['closed', 'completed'])) {
+        // Auto-freeze statistics and lock tables if program status is forcefully_closed
+        if ($validated['program_status'] === 'forcefully_closed') {
             $statsEngine = new StatisticalEngineController(new StatsCalculatorService());
             $statsEngine->freezeSchemeStats($program->program_id);
         }
@@ -187,7 +267,7 @@ class PtProgramController extends Controller
     {
         $program = PtProgram::findOrFail($id);
         $program->update([
-            'program_status' => 'closed',
+            'program_status' => 'forcefully_closed',
             'registration_status' => 'closed',
         ]);
 
@@ -203,5 +283,38 @@ class PtProgramController extends Controller
 
         $message = $newStatus === 'active' ? "Registration window opened for {$program->program_code}." : "Registration window closed for {$program->program_code}.";
         return back()->with('success', $message);
+    }
+
+    public function getNextCode(Request $request)
+    {
+        $disciplineId = $request->query('discipline_id');
+        $year = $request->query('year', date('Y'));
+
+        $shortCode = 'TEMP';
+        if (is_numeric($disciplineId)) {
+            $disc = \App\Models\DisciplineMaster::find($disciplineId);
+            if ($disc) {
+                $shortCode = $disc->short_code;
+            }
+        } elseif ($request->filled('custom_short_code')) {
+            $shortCode = strtoupper(trim($request->custom_short_code));
+        }
+
+        $count = PtProgram::where('discipline_id', $disciplineId)
+            ->where(function($q) use ($year) {
+                $q->whereYear('registration_start_date', $year)
+                  ->orWhereYear('created_at', $year);
+            })
+            ->count() + 1;
+
+        do {
+            $sequence = str_pad($count, 2, '0', STR_PAD_LEFT);
+            $nextCode = "PT-{$shortCode}-{$year}-{$sequence}";
+            $count++;
+        } while (PtProgram::where('program_code', $nextCode)->exists());
+
+        return response()->json([
+            'next_code' => $nextCode,
+        ]);
     }
 }

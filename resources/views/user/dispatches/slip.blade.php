@@ -137,7 +137,7 @@
                         <tr>
                             <td><span class="badge bg-light text-dark border">{{ $program->program_code }}</span></td>
                             <td class="fw-bold">{{ $program->program_name }}</td>
-                            <td>{{ $program->discipline }}</td>
+                            <td>{{ $program->discipline->discipline_name ?? 'N/A' }}</td>
                             <td>1 Unit Bottle</td>
                             <td>{{ $program->parameters->pluck('parameter_name')->join(', ') }}</td>
                         </tr>

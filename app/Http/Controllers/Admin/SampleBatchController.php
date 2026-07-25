@@ -48,16 +48,19 @@ class SampleBatchController extends Controller
             return redirect()->route('admin.programs.create')->with('error', 'Please create a PT Program first.');
         }
 
-        $program = $selectedProgramId ? PtProgram::find($selectedProgramId) : $programs->first();
-        if (!$program) {
-            $program = $programs->first();
-        }
+        $program = $selectedProgramId ? PtProgram::with('plan', 'parameters')->find($selectedProgramId) : null;
 
         $adminUsers = AdminUser::where('status', 'active')->orderBy('full_name')->get();
 
-        // Default batch number recommendation: BATCH-{PROGRAM_CODE}-{NEXT_NUM}
-        $count = SampleBatch::where('program_id', $program->program_id)->count() + 1;
-        $defaultBatchNumber = 'BATCH-' . $program->program_code . '-' . str_pad($count, 2, '0', STR_PAD_LEFT);
+        $defaultBatchNumber = '';
+        if ($program) {
+            // Default batch number recommendation: BATCH-{PROGRAM_CODE}-{NEXT_NUM} (Unique Check)
+            $count = SampleBatch::where('program_id', $program->program_id)->count() + 1;
+            do {
+                $defaultBatchNumber = 'BATCH-' . $program->program_code . '-' . str_pad($count, 2, '0', STR_PAD_LEFT);
+                $count++;
+            } while (SampleBatch::where('batch_number', $defaultBatchNumber)->exists());
+        }
 
         return view('admin.batches.create', compact('program', 'programs', 'adminUsers', 'defaultBatchNumber'));
     }
@@ -83,9 +86,13 @@ class SampleBatchController extends Controller
             'stability_date' => 'nullable|date',
             'stability_result' => 'nullable|string|max:255',
             'stability_remarks' => 'nullable|string',
+
+            // Reference values
+            'reference_tests' => 'nullable|array',
+            'reference_tests.*' => 'nullable|array',
         ]);
 
-        DB::transaction(function () use ($validated) {
+        DB::transaction(function () use ($validated, $request) {
             $batch = SampleBatch::create([
                 'program_id' => $validated['program_id'],
                 'batch_number' => $validated['batch_number'],
@@ -119,6 +126,24 @@ class SampleBatchController extends Controller
                     'remarks' => $validated['stability_remarks'] ?? null,
                 ]);
             }
+
+            // Save Reference values replicates
+            if ($request->has('reference_tests') && is_array($request->reference_tests)) {
+                foreach ($request->reference_tests as $runIdx => $paramVals) {
+                    if (!is_array($paramVals)) continue;
+                    foreach ($paramVals as $paramId => $val) {
+                        if ($val !== null && $val !== '') {
+                            \App\Models\BatchParameterReferenceValue::create([
+                                'batch_id' => $batch->batch_id,
+                                'program_id' => $batch->program_id,
+                                'parameter_id' => $paramId,
+                                'replicate_number' => $runIdx,
+                                'reference_value' => floatval($val),
+                            ]);
+                        }
+                    }
+                }
+            }
         });
 
         return redirect()->route('admin.batches.index')->with('success', 'Sample Production Batch created successfully!');
@@ -140,14 +165,15 @@ class SampleBatchController extends Controller
 
     public function edit($batch_id)
     {
-        $batch = SampleBatch::with(['homogeneityTests', 'stabilityTests'])->findOrFail($batch_id);
+        $batch = SampleBatch::with(['homogeneityTests', 'stabilityTests', 'referenceValues'])->findOrFail($batch_id);
         $program = $batch->program;
         $adminUsers = AdminUser::where('status', 'active')->orderBy('full_name')->get();
 
         $latestHomogeneity = $batch->homogeneityTests->first();
         $latestStability = $batch->stabilityTests->first();
+        $groupedReferenceValues = $batch->referenceValues->groupBy('replicate_number');
 
-        return view('admin.batches.edit', compact('batch', 'program', 'adminUsers', 'latestHomogeneity', 'latestStability'));
+        return view('admin.batches.edit', compact('batch', 'program', 'adminUsers', 'latestHomogeneity', 'latestStability', 'groupedReferenceValues'));
     }
 
     public function update(Request $request, $batch_id)
@@ -172,9 +198,13 @@ class SampleBatchController extends Controller
             'stability_date' => 'nullable|date',
             'stability_result' => 'nullable|string|max:255',
             'stability_remarks' => 'nullable|string',
+
+            // Reference values
+            'reference_tests' => 'nullable|array',
+            'reference_tests.*' => 'nullable|array',
         ]);
 
-        DB::transaction(function () use ($batch, $validated) {
+        DB::transaction(function () use ($batch, $validated, $request) {
             $batch->update([
                 'batch_number' => $validated['batch_number'],
                 'material' => $validated['material'],
@@ -209,6 +239,25 @@ class SampleBatchController extends Controller
                         'remarks' => $validated['stability_remarks'] ?? null,
                     ]
                 );
+            }
+
+            // Clear and rewrite Reference values replicates
+            \App\Models\BatchParameterReferenceValue::where('batch_id', $batch->batch_id)->delete();
+            if ($request->has('reference_tests') && is_array($request->reference_tests)) {
+                foreach ($request->reference_tests as $runIdx => $paramVals) {
+                    if (!is_array($paramVals)) continue;
+                    foreach ($paramVals as $paramId => $val) {
+                        if ($val !== null && $val !== '') {
+                            \App\Models\BatchParameterReferenceValue::create([
+                                'batch_id' => $batch->batch_id,
+                                'program_id' => $batch->program_id,
+                                'parameter_id' => $paramId,
+                                'replicate_number' => $runIdx,
+                                'reference_value' => floatval($val),
+                            ]);
+                        }
+                    }
+                }
             }
         });
 

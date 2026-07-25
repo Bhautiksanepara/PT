@@ -54,7 +54,7 @@
                         <div class="bg-light p-2 rounded mb-3 small">
                             <div class="d-flex justify-content-between text-muted mb-1">
                                 <span>Discipline:</span>
-                                <strong class="text-dark">{{ $prog->discipline }}</strong>
+                                <strong class="text-dark">{{ $prog->discipline->discipline_name ?? 'N/A' }}</strong>
                             </div>
                             <div class="d-flex justify-content-between text-muted mb-1">
                                 <span>Registration Deadline:</span>
@@ -99,7 +99,7 @@
                             <div class="row g-2 mb-3 bg-light p-3 rounded border">
                                 <div class="col-md-4">
                                     <small class="text-muted d-block">Discipline:</small>
-                                    <strong class="text-dark">{{ $prog->discipline }}</strong>
+                                    <strong class="text-dark">{{ $prog->discipline->discipline_name ?? 'N/A' }}</strong>
                                 </div>
                                 <div class="col-md-4">
                                     <small class="text-muted d-block">Scheme Code:</small>

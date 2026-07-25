@@ -50,7 +50,7 @@
                         <div><strong>Program Name:</strong> {{ $registration->program->program_name }}</div>
                         <div><strong>Program Code:</strong> {{ $registration->program->program_code }}</div>
                         <div><strong>Assigned Sample Code:</strong> {{ $registration->sample->sample_code ?? 'PT-SAMPLE' }}</div>
-                        <div><strong>Discipline:</strong> {{ $registration->program->discipline }}</div>
+                        <div><strong>Discipline:</strong> {{ $registration->program->discipline->discipline_name ?? 'N/A' }}</div>
                     </div>
                 </div>
             </div>
