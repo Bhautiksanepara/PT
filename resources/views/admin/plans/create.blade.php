@@ -29,7 +29,7 @@
                         </div>
                         <div class="col-md-4">
                             <span class="text-muted d-block">Discipline</span>
-                            <span class="fw-semibold text-dark">{{ $program->discipline ?? 'General' }}</span>
+                            <span class="fw-semibold text-dark">{{ $program->discipline->discipline_name ?? $program->discipline }}</span>
                         </div>
                         <div class="col-md-4">
                             <span class="text-muted d-block">Parameters Count</span>

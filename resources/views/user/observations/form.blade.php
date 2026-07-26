@@ -6,7 +6,7 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h4 class="fw-bold mb-1"><i class="bx bx-vial me-2 text-success"></i> Phase 6 – Observation Entry Form</h4>
+            <h4 class="fw-bold mb-1"><i class="bx bx-vial me-2 text-success"></i> Observation Entry Form</h4>
             <p class="text-muted small mb-0">
                 Sample Code: <span class="badge bg-primary font-monospace">{{ $sample->sample_code }}</span> | 
                 Program: <strong class="text-dark">{{ $program->program_name }}</strong> ({{ $program->program_code }}) | 
@@ -20,17 +20,21 @@
         </div>
     </div>
 
-    @if($isPastDeadline)
+    @if($existingObservations->count() > 0)
+        <div class="alert alert-success shadow-sm mb-4">
+            <i class="bx bx-check-shield me-2 fs-5 align-middle"></i> 
+            <strong>Observations Submitted &amp; Locked:</strong> You have successfully submitted your test observations for this scheme. Form entries are locked.
+        </div>
+    @elseif($isPastDeadline)
         <div class="alert alert-danger shadow-sm mb-4">
             <i class="bx bx-lock-alt me-2 fs-5 align-middle"></i> 
-            <strong>Submission Window Closed & Locked:</strong> The submission deadline for this scheme was 
+            <strong>Submission Window Closed &amp; Locked:</strong> The submission deadline for this scheme was 
             <strong>{{ $deadline ? $deadline->format('d M Y') : 'N/A' }}</strong>. Form entries are locked for ISO 13528 evaluation.
         </div>
     @else
         <div class="alert alert-info shadow-sm mb-4">
             <i class="bx bx-info-circle me-2 fs-5 align-middle"></i> 
-            <strong>Flexible Editing Open:</strong> You can submit and update your test results anytime until the submission deadline on 
-            <strong>{{ $deadline ? $deadline->format('d M Y') : 'N/A' }}</strong>.
+            <strong>Flexible Submission Open:</strong> Enter your test results below. Note: once submitted, your observations will be finalized and locked from editing.
         </div>
     @endif
 

@@ -3,6 +3,17 @@
 @section('title', 'Participant Dashboard')
 
 @section('content')
+@foreach($dashboardAlerts as $alert)
+    <a href="{{ $alert['url'] }}" class="alert alert-{{ $alert['type'] }} d-flex align-items-center gap-3 text-decoration-none text-dark border shadow-sm mb-3">
+        <i class="bx {{ $alert['icon'] }} fs-3"></i>
+        <div>
+            <div class="fw-bold">{{ $alert['title'] }}</div>
+            <div class="small">{{ $alert['message'] }}</div>
+        </div>
+        <i class="bx bx-right-arrow-alt ms-auto fs-4"></i>
+    </a>
+@endforeach
+
 <!-- Welcome Banner -->
 <div class="card bg-dark text-white mb-4 shadow-sm">
     <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
@@ -27,7 +38,17 @@
             <h5 class="fw-bold text-dark mb-0"><i class="bx bx-layer me-2 text-primary"></i> Available Active PT Programs</h5>
             <small class="text-muted">Browse upcoming ISO/IEC 17043 schemes and register your laboratory</small>
         </div>
-        <span class="badge bg-primary">{{ $activePrograms->count() }} Schemes Open</span>
+        @php
+            $openForRegistrationCount = $activePrograms->filter(function($p) use($userRegistrations) {
+                $isRegistered = $userRegistrations->pluck('program_id')->contains($p->program_id);
+                // Open = registration window is active today
+                $regOpen = $p->registration_start_date && $p->registration_end_date
+                    && today()->between(\Carbon\Carbon::parse($p->registration_start_date), \Carbon\Carbon::parse($p->registration_end_date))
+                    && !in_array($p->program_status, ['draft', 'forcefully_closed', 'completed']);
+                return $regOpen || (!$isRegistered && $p->computed_program_status === 'active');
+            })->count();
+        @endphp
+        <span class="badge bg-primary">{{ $openForRegistrationCount }} Schemes Open</span>
     </div>
 
     <div class="row g-3">
@@ -55,6 +76,10 @@
                             <div class="d-flex justify-content-between text-muted mb-1">
                                 <span>Discipline:</span>
                                 <strong class="text-dark">{{ $prog->discipline->discipline_name ?? 'N/A' }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between text-muted mb-1">
+                                <span>Registration Opens:</span>
+                                <strong class="text-success">{{ \Carbon\Carbon::parse($prog->registration_start_date)->format('d M Y') }}</strong>
                             </div>
                             <div class="d-flex justify-content-between text-muted mb-1">
                                 <span>Registration Deadline:</span>
@@ -250,9 +275,12 @@
                             </td>
                             <td>
                                 @if($reg->sample)
-                                    @if($reg->observations->count() > 0)
-                                        <a href="{{ route('user.observations.form', $reg->registration_id) }}" class="btn btn-sm btn-soft-success p-1 px-2 border-0 fw-semibold" title="Click to view/edit submitted observations">
-                                            <i class="bx bx-file-find me-1"></i> {{ $reg->observations->count() }} Results Saved <i class="bx bx-edit-alt ms-1"></i>
+                                    @php
+                                        $hasSubmitted = $reg->observations->count() > 0;
+                                    @endphp
+                                    @if($hasSubmitted)
+                                        <a href="{{ route('user.observations.form', $reg->registration_id) }}" class="btn btn-sm btn-soft-success p-1 px-2 border-0 fw-semibold" title="Click to view submitted observations">
+                                            <i class="bx bx-file-find me-1"></i> {{ $reg->observations->count() }} Results Saved
                                         </a>
                                     @else
                                         <a href="{{ route('user.observations.form', $reg->registration_id) }}" class="btn btn-sm btn-soft-warning p-1 px-2 border-0 fw-semibold" title="Click to enter test parameters">

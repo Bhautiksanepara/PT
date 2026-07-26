@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\ReferralCode;
+use App\Mail\ReferralCodeMail;
 use App\Models\Lab;
+use App\Models\ReferralCode;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class ReferralCodeController extends Controller
 {
@@ -73,22 +75,75 @@ class ReferralCodeController extends Controller
             'expiry_date'        => 'nullable|date|after_or_equal:today',
         ]);
 
-        $adminId = auth()->guard('admin')->id() ?? 1;
+        $adminId          = auth()->guard('admin')->id() ?? 1;
+        $isClientSpecific = $request->has('is_client_specific');
+        $isOneTimeUse     = $request->has('is_one_time_use');
 
-        ReferralCode::create([
+        $referral = ReferralCode::create([
             'code'               => strtoupper(trim($validated['code'])),
             'discount_type'      => $validated['discount_type'],
             'discount_value'     => $validated['discount_value'],
-            'is_one_time_use'    => $request->has('is_one_time_use') ? 1 : 0,
-            'is_client_specific' => $request->has('is_client_specific') ? 1 : 0,
-            'client_lab_id'      => $request->has('is_client_specific') ? $request->client_lab_id : null,
+            'is_one_time_use'    => $isOneTimeUse ? 1 : 0,
+            'is_client_specific' => $isClientSpecific ? 1 : 0,
+            'client_lab_id'      => $isClientSpecific ? $request->client_lab_id : null,
             'expiry_date'        => $validated['expiry_date'] ?? null,
             'is_used'            => 0,
             'created_by'         => $adminId,
             'created_at'         => now(),
         ]);
 
-        return redirect()->route('admin.referrals.index')->with('success', 'Referral Code created successfully with configured rules!');
+        // --- Send notification email(s) ---
+        $sentCount = 0;
+        $failCount = 0;
+
+        if ($isClientSpecific && $referral->client_lab_id) {
+            // Send to the single specific lab only
+            $lab = Lab::find($referral->client_lab_id);
+            if ($lab && $lab->email) {
+                try {
+                    Mail::to($lab->email)->send(new ReferralCodeMail(
+                        labName:          $lab->laboratory_name,
+                        couponCode:       $referral->code,
+                        discountType:     $referral->discount_type,
+                        discountValue:    (float) $referral->discount_value,
+                        expiryDate:       $referral->expiry_date,
+                        isOneTimeUse:     (bool) $referral->is_one_time_use,
+                        isClientSpecific: true,
+                    ));
+                    $sentCount++;
+                } catch (\Exception $e) {
+                    Log::error("Failed to send referral code email to lab {$lab->lab_id}: " . $e->getMessage());
+                    $failCount++;
+                }
+            }
+        } else {
+            // Send to ALL registered labs
+            $allLabs = Lab::whereNotNull('email')->get();
+            foreach ($allLabs as $lab) {
+                try {
+                    Mail::to($lab->email)->send(new ReferralCodeMail(
+                        labName:          $lab->laboratory_name,
+                        couponCode:       $referral->code,
+                        discountType:     $referral->discount_type,
+                        discountValue:    (float) $referral->discount_value,
+                        expiryDate:       $referral->expiry_date,
+                        isOneTimeUse:     (bool) $referral->is_one_time_use,
+                        isClientSpecific: false,
+                    ));
+                    $sentCount++;
+                } catch (\Exception $e) {
+                    Log::error("Failed to send referral code email to lab {$lab->lab_id}: " . $e->getMessage());
+                    $failCount++;
+                }
+            }
+        }
+
+        $emailMsg = $sentCount > 0
+            ? " Notification email sent to {$sentCount} lab(s)."
+            : ($failCount > 0 ? " Email delivery failed — check logs." : '');
+
+        return redirect()->route('admin.referrals.index')
+            ->with('success', "Referral Code created successfully with configured rules!{$emailMsg}");
     }
 
     public function destroy($referral_id)

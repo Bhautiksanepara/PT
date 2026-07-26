@@ -1,0 +1,1 @@
+<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;color:#1e293b"><h2>Verify your PT Software email</h2><p>Hello {{ $verification->contact_person }},</p><p>Your verification code is:</p><p style="font-size:28px;font-weight:bold;letter-spacing:6px">{{ $otp }}</p><p>This code expires in 10 minutes. Do not share it with anyone.</p></body></html>

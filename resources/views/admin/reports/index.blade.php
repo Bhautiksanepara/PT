@@ -8,6 +8,9 @@
         <h4 class="fw-bold mb-1">Reports & Certificates Directory</h4>
         <p class="text-muted small mb-0">Generate, view, and print ISO 17043 individual evaluation reports, certificates, and master matrix reports</p>
     </div>
+    <a href="{{ route('admin.reports.export', request()->all()) }}" class="btn btn-outline-success btn-sm shadow-sm fw-semibold">
+        <i class="bx bx-download me-1"></i> Export (CSV/Excel)
+    </a>
 </div>
 
 <!-- Filter Card -->

@@ -9,6 +9,9 @@
         <p class="text-muted small mb-0">Track courier dispatches, tracking numbers, and notification status</p>
     </div>
     <div class="d-flex gap-2">
+        <a href="{{ route('admin.dispatches.export', request()->all()) }}" class="btn btn-outline-success btn-sm shadow-sm fw-semibold">
+            <i class="bx bx-download me-1"></i> Export (CSV/Excel)
+        </a>
         <button type="button" class="btn btn-primary btn-sm shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#quickDispatchProgramModal">
             <i class="bx bx-package me-1"></i> + New Dispatch by Program
         </button>

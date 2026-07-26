@@ -4,6 +4,8 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Lab;
+use App\Models\LabSignupVerification;
+use App\Mail\LabEmailVerificationMail;
 use App\Mail\UserWelcomeMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,60 +28,104 @@ class UserAuthController extends Controller
     {
         $validated = $request->validate([
             'laboratory_name' => 'required|string|max:255',
-            'nabl_certificate_number' => 'nullable|string|max:100',
-            'laboratory_type' => 'required|string|max:150',
-            'gst_number' => 'required|string|max:50|unique:labs,gst_number',
+            'center_name' => 'nullable|string|max:255',
+            'contact_person' => 'required|string|max:150',
+            'email' => 'required|string|email|max:150',
             'address' => 'required|string',
             'city' => 'required|string|max:100',
             'state' => 'required|string|max:100',
             'country' => 'required|string|max:100',
             'pin_code' => 'required|string|max:20',
-            'contact_person' => 'required|string|max:150',
-            'designation' => 'required|string|max:100',
-            'email' => 'required|string|email|max:255|unique:labs,email',
             'mobile_number' => 'required|string|max:20',
-            'password' => 'required|string|min:8|confirmed',
         ]);
 
-        // Auto-Generate Unique Username (Pattern: LAB_SLUG_RANDOM)
-        $cleanSlug = strtoupper(Str::slug(substr($validated['laboratory_name'], 0, 10), '_'));
-        if (empty($cleanSlug)) {
-            $cleanSlug = 'LAB';
-        }
-        
-        do {
-            $generatedUsername = 'LAB_' . $cleanSlug . '_' . rand(1000, 9999);
-        } while (Lab::where('username', $generatedUsername)->exists());
+        $otp = (string) random_int(100000, 999999);
+        $verification = LabSignupVerification::updateOrCreate(
+            ['email' => strtolower($validated['email'])],
+            array_merge($validated, [
+                'email' => strtolower($validated['email']),
+                'otp_hash' => Hash::make($otp),
+                'expires_at' => now()->addMinutes(10),
+            ])
+        );
 
-        $rawPassword = $request->password;
+        try {
+            Mail::to($verification->email)->send(new LabEmailVerificationMail($verification, $otp));
+        } catch (\Exception $e) {
+            return back()->withInput()->withErrors(['email' => 'We could not send the verification email. Please try again.']);
+        }
+
+        return redirect()->route('user.register.verify', ['email' => $verification->email])
+            ->with('success', 'A six-digit verification code has been sent to your email address.');
+    }
+
+    public function showVerificationForm(Request $request)
+    {
+        return view('user.auth.verify_email', ['email' => $request->query('email')]);
+    }
+
+    public function verifyEmail(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'otp' => 'required|digits:6',
+        ]);
+
+        $verification = LabSignupVerification::where('email', strtolower($request->email))->first();
+        if (!$verification || now()->greaterThan($verification->expires_at) || !Hash::check($request->otp, $verification->otp_hash)) {
+            return back()->withInput()->withErrors(['otp' => 'The verification code is invalid or has expired.']);
+        }
+
+        $generatedUsername = $this->generateUsername($verification->contact_person);
+        $rawPassword = Str::password(12, true, true, true, false);
 
         $lab = Lab::create([
-            'laboratory_name' => $validated['laboratory_name'],
-            'nabl_certificate_number' => $validated['nabl_certificate_number'] ?? null,
-            'laboratory_type' => $validated['laboratory_type'],
-            'gst_number' => strtoupper($validated['gst_number']),
-            'address' => $validated['address'],
-            'city' => $validated['city'],
-            'state' => $validated['state'],
-            'country' => $validated['country'],
-            'pin_code' => $validated['pin_code'],
-            'contact_person' => $validated['contact_person'],
-            'designation' => $validated['designation'],
-            'email' => strtolower($validated['email']),
-            'mobile_number' => $validated['mobile_number'],
+            'laboratory_name' => $verification->laboratory_name,
+            'center_name' => $verification->center_name,
+            'address' => $verification->address,
+            'city' => $verification->city,
+            'state' => $verification->state,
+            'country' => $verification->country,
+            'pin_code' => $verification->pin_code,
+            'contact_person' => $verification->contact_person,
+            'email' => $verification->email,
+            'mobile_number' => $verification->mobile_number,
             'username' => $generatedUsername,
             'password_hash' => Hash::make($rawPassword),
             'status' => 'active',
         ]);
 
-        // Send Welcome & Credential Email
+        $verification->delete();
+
         try {
             Mail::to($lab->email)->send(new UserWelcomeMail($lab, $rawPassword));
         } catch (\Exception $e) {
-            // Soft fail log if mailer local driver is not configured
+            // The verified account remains available even if the mail transport is temporarily unavailable.
         }
 
-        return redirect()->route('user.login')->with('success', "Registration successful! Your Auto-Generated User ID is '{$generatedUsername}'. Account details have been sent to your email.");
+        return redirect()->route('user.login')->with('success', 'Email verified. Your User ID and password have been sent to your email.');
+    }
+
+    public function resendVerificationOtp(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+        $verification = LabSignupVerification::where('email', strtolower($request->email))->firstOrFail();
+        $otp = (string) random_int(100000, 999999);
+        $verification->update(['otp_hash' => Hash::make($otp), 'expires_at' => now()->addMinutes(10)]);
+
+        Mail::to($verification->email)->send(new LabEmailVerificationMail($verification, $otp));
+
+        return back()->with('success', 'A new verification code has been sent.');
+    }
+
+    private function generateUsername(string $contactPerson): string
+    {
+        $cleanSlug = strtoupper(Str::slug(substr($contactPerson, 0, 10), '_')) ?: 'LAB';
+        do {
+            $username = 'LAB_' . $cleanSlug . '_' . random_int(1000, 9999);
+        } while (Lab::where('username', $username)->exists());
+
+        return $username;
     }
 
     public function showLoginForm()

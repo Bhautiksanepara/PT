@@ -116,7 +116,7 @@
                     <th style="width: 30%;">Program Code:</th>
                     <td class="fw-bold">{{ $program->program_code }}</td>
                     <th style="width: 25%;">Discipline:</th>
-                    <td>{{ $program->discipline ?? 'Chemical' }}</td>
+                    <td>{{ $program->discipline->discipline_name ?? $program->discipline }}</td>
                 </tr>
                 <tr>
                     <th>Scheme Code:</th>

@@ -15,6 +15,17 @@
     </div>
 </div>
 
+@foreach($dashboardAlerts as $alert)
+    <a href="{{ $alert['url'] }}" class="alert alert-{{ $alert['type'] }} d-flex align-items-center gap-3 text-decoration-none text-dark border shadow-sm mb-3">
+        <i class="bx {{ $alert['icon'] }} fs-3"></i>
+        <div>
+            <div class="fw-bold">{{ $alert['title'] }}</div>
+            <div class="small">{{ $alert['message'] }}</div>
+        </div>
+        <i class="bx bx-right-arrow-alt ms-auto fs-4"></i>
+    </a>
+@endforeach
+
 <!-- Row 1: 6 Stat Cards -->
 <div class="row g-3 mb-4">
     <!-- Total Participants -->

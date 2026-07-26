@@ -67,7 +67,12 @@
                         <tr>
                             <td class="fw-bold text-primary">LAB-{{ str_pad($lab->lab_id, 4, '0', STR_PAD_LEFT) }}</td>
                             <td>
-                                <div class="fw-semibold text-dark">{{ $lab->laboratory_name }}</div>
+                                <div class="fw-semibold text-dark">
+                                    {{ $lab->laboratory_name }}
+                                    @if(!$lab->profile_completed_at)
+                                        <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Incomplete Profile</span>
+                                    @endif
+                                </div>
                                 @if($lab->city || $lab->state)
                                     <small class="text-muted"><i class="bx bx-map-pin"></i> {{ $lab->city }}, {{ $lab->state }}</small>
                                 @endif

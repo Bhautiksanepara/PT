@@ -14,17 +14,23 @@ use App\Http\Controllers\Admin\StatisticalEngineController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ArchiveController;
 use App\Http\Controllers\Admin\ReferralCodeController;
+use App\Http\Controllers\Admin\AdminListExportController;
 use App\Http\Controllers\User\UserAuthController;
 use App\Http\Controllers\User\UserDashboardController;
 use App\Http\Controllers\User\UserProgramRegistrationController;
 use App\Http\Controllers\User\UserReportController;
 use App\Http\Controllers\User\UserDispatchController;
 use App\Http\Controllers\User\UserObservationController;
+use App\Http\Controllers\User\LabProfileController;
+use App\Http\Middleware\EnsureLabProfileComplete;
 
 // User / Participant Portal Guest Routes (Registration & Login)
 Route::middleware('guest:lab')->group(function () {
     Route::get('/register', [UserAuthController::class, 'showRegisterForm'])->name('user.register');
     Route::post('/register', [UserAuthController::class, 'register'])->name('user.register.submit');
+    Route::get('/register/verify', [UserAuthController::class, 'showVerificationForm'])->name('user.register.verify');
+    Route::post('/register/verify', [UserAuthController::class, 'verifyEmail'])->name('user.register.verify.submit');
+    Route::post('/register/resend-otp', [UserAuthController::class, 'resendVerificationOtp'])->name('user.register.resend-otp');
     Route::get('/login', [UserAuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [UserAuthController::class, 'login'])->name('user.login.submit');
 });
@@ -34,8 +40,12 @@ Route::get('/user/login', function() {
 })->name('user.login');
 
 // User / Participant Protected Routes
-Route::middleware('auth:lab')->group(function () {
+Route::middleware(['auth:lab', EnsureLabProfileComplete::class])->group(function () {
     Route::post('/logout', [UserAuthController::class, 'logout'])->name('user.logout');
+    Route::get('/profile/complete', [LabProfileController::class, 'edit'])->name('user.profile.complete');
+    Route::put('/profile/complete', [LabProfileController::class, 'update'])->name('user.profile.complete.update');
+    Route::get('/profile/change-password', [LabProfileController::class, 'showPasswordForm'])->name('user.password.edit');
+    Route::put('/profile/change-password', [LabProfileController::class, 'updatePassword'])->name('user.password.update');
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('user.dashboard');
 
     // Phase 5: Sample Dispatch Tracking & Confirmation Page
@@ -87,12 +97,14 @@ Route::prefix('admin')->middleware(App\Http\Middleware\AdminMiddleware::class)->
 
     // Module 2 & 4: PT Program Management & Registration Window Automation
     Route::get('programs/next-code', [PtProgramController::class, 'getNextCode'])->name('admin.programs.next-code');
+    Route::get('programs/export/csv', [AdminListExportController::class, 'programs'])->name('admin.programs.export');
     Route::resource('programs', PtProgramController::class)->names('admin.programs');
     Route::post('programs/{program}/close', [PtProgramController::class, 'close'])->name('admin.programs.close');
     Route::post('programs/{program}/toggle-window', [PtProgramController::class, 'toggleRegistrationStatus'])->name('admin.programs.toggle-window');
 
     // Module 5: PT Plan Generation
     Route::get('plans', [PtPlanController::class, 'index'])->name('admin.plans.index');
+    Route::get('plans/export/csv', [AdminListExportController::class, 'plans'])->name('admin.plans.export');
     Route::get('programs/{program}/plan/create', [PtPlanController::class, 'create'])->name('admin.plans.create');
     Route::post('programs/{program}/plan', [PtPlanController::class, 'store'])->name('admin.plans.store');
     Route::get('programs/{program}/plan', [PtPlanController::class, 'show'])->name('admin.plans.show');
@@ -100,6 +112,7 @@ Route::prefix('admin')->middleware(App\Http\Middleware\AdminMiddleware::class)->
 
     // Module 6: Sample Production Planning (Batches)
     Route::get('batches', [SampleBatchController::class, 'index'])->name('admin.batches.index');
+    Route::get('batches/export/csv', [AdminListExportController::class, 'batches'])->name('admin.batches.export');
     Route::get('batches/create', [SampleBatchController::class, 'create'])->name('admin.batches.create_direct');
     Route::get('programs/{program}/batches/create', [SampleBatchController::class, 'create'])->name('admin.batches.create');
     Route::post('batches', [SampleBatchController::class, 'store'])->name('admin.batches.store');
@@ -110,12 +123,14 @@ Route::prefix('admin')->middleware(App\Http\Middleware\AdminMiddleware::class)->
 
     // Module 7: Sample Assignment & Traceability
     Route::get('samples', [SampleAssignmentController::class, 'index'])->name('admin.samples.index');
+    Route::get('samples/export/csv', [AdminListExportController::class, 'samples'])->name('admin.samples.export');
     Route::get('programs/{program}/samples', [SampleAssignmentController::class, 'programSamples'])->name('admin.samples.program');
     Route::post('programs/{program}/samples/bulk-assign', [SampleAssignmentController::class, 'bulkAssign'])->name('admin.samples.bulk-assign');
     Route::post('samples/assign-single', [SampleAssignmentController::class, 'assignSingle'])->name('admin.samples.assign-single');
 
     // Module 8: Dispatch Management
     Route::get('dispatches', [DispatchController::class, 'index'])->name('admin.dispatches.index');
+    Route::get('dispatches/export/csv', [AdminListExportController::class, 'dispatches'])->name('admin.dispatches.export');
     Route::get('programs/{program}/dispatches', [DispatchController::class, 'programDispatches'])->name('admin.dispatches.program');
     Route::post('dispatches/single', [DispatchController::class, 'storeSingle'])->name('admin.dispatches.single');
     Route::post('programs/{program}/dispatches/bulk', [DispatchController::class, 'storeBulk'])->name('admin.dispatches.bulk');
@@ -148,12 +163,14 @@ Route::prefix('admin')->middleware(App\Http\Middleware\AdminMiddleware::class)->
 
     // Module 10: Statistical Engine (ISO 13528 Standard)
     Route::get('stats', [StatisticalEngineController::class, 'index'])->name('admin.stats.index');
+    Route::get('stats/export/csv', [AdminListExportController::class, 'stats'])->name('admin.stats.export-list');
     Route::get('programs/{program}/parameters/{parameter}/stats', [StatisticalEngineController::class, 'parameterStats'])->name('admin.stats.parameter');
     Route::get('programs/{program}/parameters/{parameter}/stats/export', [StatisticalEngineController::class, 'exportCsv'])->name('admin.stats.export');
     Route::post('programs/{program}/freeze-stats', [StatisticalEngineController::class, 'freezeSchemeStats'])->name('admin.stats.freeze');
 
     // Module 11: Report Generation & Certificates
     Route::get('reports', [ReportController::class, 'index'])->name('admin.reports.index');
+    Route::get('reports/export/csv', [AdminListExportController::class, 'reports'])->name('admin.reports.export');
     Route::get('programs/{program}/registrations/{registration}/report', [ReportController::class, 'individualReport'])->name('admin.reports.individual');
     Route::get('programs/{program}/registrations/{registration}/certificate', [ReportController::class, 'certificate'])->name('admin.reports.certificate');
     Route::get('programs/{program}/parameters/{parameter}/report', [ReportController::class, 'parameterReport'])->name('admin.reports.parameter');
@@ -165,6 +182,7 @@ Route::prefix('admin')->middleware(App\Http\Middleware\AdminMiddleware::class)->
 
     // Referral Code Management
     Route::get('referrals', [ReferralCodeController::class, 'index'])->name('admin.referrals.index');
+    Route::get('referrals/export/csv', [AdminListExportController::class, 'referrals'])->name('admin.referrals.export');
     Route::post('referrals', [ReferralCodeController::class, 'store'])->name('admin.referrals.store');
     Route::delete('referrals/{referral}', [ReferralCodeController::class, 'destroy'])->name('admin.referrals.destroy');
 

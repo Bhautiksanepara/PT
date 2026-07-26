@@ -6,9 +6,33 @@
 <style>
     @media print {
         body { background: #fff !important; font-size: 12px !important; }
-        .sidebar, .navbar, .btn-print-bar, footer { display: none !important; }
-        .content-wrapper { margin: 0 !important; padding: 0 !important; }
-        .card { border: none !important; box-shadow: none !important; }
+        #sidebar, 
+        .top-navbar, 
+        .btn-print-bar, 
+        footer { 
+            display: none !important; 
+        }
+        #wrapper,
+        #content,
+        .container-fluid {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-shadow: none !important;
+        }
+        .report-card { 
+            border: none !important; 
+            box-shadow: none !important; 
+            max-width: 100% !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        @page {
+            size: A4 portrait;
+            margin: 10mm;
+        }
     }
     .report-card { max-width: 900px; margin: 0 auto; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; }
     .report-header { border-bottom: 3px double #0f172a; padding: 25px 30px; }
@@ -67,7 +91,7 @@
             <div class="col-md-6 ps-md-3">
                 <small class="text-muted d-block fw-semibold text-uppercase">PT Scheme & Sample Identifier</small>
                 <h6 class="fw-bold text-primary mb-1">{{ $program->program_code }} — {{ $program->program_name }}</h6>
-                <small class="text-dark d-block fw-semibold">Discipline: {{ $program->discipline }}</small>
+                <small class="text-dark d-block fw-semibold">Discipline: {{ $program->discipline->discipline_name ?? $program->discipline }}</small>
                 <small class="text-dark d-block">Registration #: <strong>{{ $registration->registration_number }}</strong></small>
                 <small class="text-dark d-block">Assigned Sample ID: <strong class="text-primary">{{ $sample->sample_code ?? 'N/A' }}</strong></small>
             </div>

@@ -9,25 +9,45 @@
         /* nothing special on screen */
     }
 
-    /* ── Print: hide EVERYTHING except #printable-matrix ──────── */
+    /* ── Print: hide sidebar/navbar/bar and adjust layout ── */
     @media print {
-        /* Hide the entire body first */
-        body > * { display: none !important; }
+        /* Hide layout elements specifically */
+        .sidebar, 
+        .main-sidebar,
+        .main-header,
+        .navbar, 
+        #no-print-bar, 
+        footer,
+        .btn-print-bar, 
+        header, 
+        aside, 
+        nav { 
+            display: none !important; 
+        }
 
-        /* Then show only our printable section */
-        #printable-matrix,
-        #printable-matrix * {
-            display: revert !important;
-            visibility: visible !important;
+        /* Reset wrappers/content classes to display and fit full page */
+        body, 
+        html,
+        .wrapper, 
+        .content-wrapper, 
+        .content,
+        .container,
+        .container-fluid {
+            background: #fff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            min-height: auto !important;
+            box-shadow: none !important;
         }
 
         #printable-matrix {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
+            display: block !important;
+            visibility: visible !important;
             width: 100% !important;
             margin: 0 !important;
-            padding: 16px !important;
+            padding: 0 !important;
             background: #fff !important;
             font-size: 11px !important;
         }
@@ -36,11 +56,23 @@
         table, th, td {
             border: 1px solid #333 !important;
         }
-        thead { background-color: #1e3a5f !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        .badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        thead { 
+            background-color: #1e3a5f !important; 
+            color: #fff !important; 
+            -webkit-print-color-adjust: exact; 
+            print-color-adjust: exact; 
+        }
+        .badge { 
+            -webkit-print-color-adjust: exact; 
+            print-color-adjust: exact; 
+        }
 
         /* Remove shadows and rounded corners for clean print */
-        .card { box-shadow: none !important; border: none !important; }
+        .card { 
+            box-shadow: none !important; 
+            border: none !important; 
+            background: transparent !important;
+        }
 
         /* Page setup */
         @page {

@@ -6,9 +6,32 @@
 <style>
     @media print {
         body { background: #fff !important; }
-        .sidebar, .navbar, .btn-print-bar, footer { display: none !important; }
-        .content-wrapper { margin: 0 !important; padding: 0 !important; }
-        .cert-card { border: 10px solid #0f172a !important; box-shadow: none !important; }
+        #sidebar, 
+        .top-navbar, 
+        .btn-print-bar, 
+        footer { 
+            display: none !important; 
+        }
+        #wrapper,
+        #content,
+        .container-fluid {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-shadow: none !important;
+        }
+        .cert-card { 
+            border: 10px solid #0f172a !important; 
+            box-shadow: none !important; 
+            max-width: 100% !important;
+            width: 100% !important;
+            margin: 0 !important;
+        }
+        @page {
+            size: A4 landscape;
+            margin: 10mm;
+        }
     }
     .cert-container { max-width: 920px; margin: 0 auto; }
     .cert-card {
@@ -97,7 +120,7 @@
         <div class="p-3 bg-light rounded border my-4 d-inline-block px-5">
             <h4 class="fw-bold text-dark mb-1">{{ $program->program_name }}</h4>
             <span class="badge bg-primary fs-6 me-2">Scheme Code: {{ $program->program_code }}</span>
-            <span class="badge bg-secondary fs-6">Discipline: {{ $program->discipline }}</span>
+            <span class="badge bg-secondary fs-6">Discipline: {{ $program->discipline->discipline_name ?? $program->discipline }}</span>
             <small class="d-block text-muted mt-2">Assigned Sample Identifier: <strong>{{ $sample->sample_code ?? 'N/A' }}</strong></small>
         </div>
 

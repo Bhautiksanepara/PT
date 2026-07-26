@@ -9,6 +9,9 @@
         <p class="text-muted small mb-0">ISO 17043 PT Scheme Plans, Preparation Instructions & Coordinators</p>
     </div>
     <div class="d-flex gap-2">
+        <a href="{{ route('admin.plans.export') }}" class="btn btn-outline-success btn-sm shadow-sm fw-semibold">
+            <i class="bx bx-download me-1"></i> Export (CSV/Excel)
+        </a>
         <button type="button" class="btn btn-primary btn-sm shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#quickCreatePlanModal">
             <i class="bx bx-plus me-1"></i> Create PT Plan
         </button>

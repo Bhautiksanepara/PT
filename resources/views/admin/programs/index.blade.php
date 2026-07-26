@@ -8,7 +8,10 @@
         <h4 class="fw-bold mb-1">PT Program Management</h4>
         <p class="text-muted small mb-0">Create, edit, monitor, and close Proficiency Testing programs</p>
     </div>
-    <div>
+    <div class="d-flex gap-2">
+        <a href="{{ route('admin.programs.export', request()->all()) }}" class="btn btn-outline-success shadow-sm btn-sm px-3">
+            <i class="bx bx-download me-1"></i> Export (CSV/Excel)
+        </a>
         <a href="{{ route('admin.programs.create') }}" class="btn btn-primary shadow-sm btn-sm px-3">
             <i class="bx bx-plus me-1"></i> Create New Program
         </a>

@@ -36,7 +36,9 @@ class PtProgram extends Model
             $startDate = $program->registration_start_date ? Carbon::parse($program->registration_start_date) : null;
             $endDate = $program->registration_end_date ? Carbon::parse($program->registration_end_date) : null;
 
-            if ($startDate && $today->lt($startDate)) {
+            if (in_array($program->program_status, ['forcefully_closed', 'completed'])) {
+                $program->registration_status = 'closed';
+            } elseif ($startDate && $today->lt($startDate)) {
                 $program->registration_status = 'upcoming';
             } elseif ($endDate && $today->gt($endDate)) {
                 $program->registration_status = 'closed';
@@ -82,7 +84,7 @@ class PtProgram extends Model
     public function getComputedRegistrationStatusAttribute()
     {
         // If manually marked closed or completed
-        if ($this->registration_status === 'closed' || $this->program_status === 'forcefully_closed') {
+        if ($this->registration_status === 'closed' || in_array($this->program_status, ['forcefully_closed', 'completed'])) {
             return 'closed';
         }
 

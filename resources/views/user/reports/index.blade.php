@@ -5,7 +5,7 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1"><i class="bx bx-award me-2 text-success"></i> Phase 7 – PT Reports & Certificates Vault</h4>
+        <h4 class="fw-bold mb-1"><i class="bx bx-award me-2 text-success"></i>PT Reports & Certificates Vault</h4>
         <p class="text-muted small mb-0">Permanently access, view, and download your official ISO 17043 Evaluation Reports, parameter Z-Scores, and Certificates</p>
     </div>
     <div>

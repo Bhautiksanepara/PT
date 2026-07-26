@@ -91,11 +91,11 @@
                                     <span class="badge bg-light text-muted border">No Results Yet</span>
                                 @endif
                             </td>
-                            <td>
+                             <td>
                                 @if($isPastDeadline)
                                     <span class="badge bg-danger py-2 px-3"><i class="bx bx-lock-alt me-1"></i> Locked & Closed</span>
                                 @elseif($hasSubmitted)
-                                    <span class="badge badge-soft-info py-2 px-3"><i class="bx bx-edit me-1"></i> Results Submitted (Editable)</span>
+                                    <span class="badge badge-soft-success py-2 px-3"><i class="bx bx-lock-alt me-1"></i> Results Submitted (Locked)</span>
                                 @else
                                     <span class="badge badge-soft-warning py-2 px-3"><i class="bx bx-time me-1"></i> Awaiting Results</span>
                                 @endif
@@ -107,8 +107,8 @@
                                             <i class="bx bx-show me-1"></i> View Locked Form
                                         </a>
                                     @elseif($hasSubmitted)
-                                        <a href="{{ route('user.observations.form', $reg->registration_id) }}" class="btn btn-sm btn-primary">
-                                            <i class="bx bx-edit me-1"></i> Edit Results
+                                        <a href="{{ route('user.observations.form', $reg->registration_id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bx bx-show-alt me-1"></i> View Results
                                         </a>
                                     @else
                                         <a href="{{ route('user.observations.form', $reg->registration_id) }}" class="btn btn-sm btn-success fw-bold">

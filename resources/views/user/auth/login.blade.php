@@ -11,7 +11,7 @@
                     <i class="bx bx-log-in-circle fs-2"></i>
                 </div>
                 <h4 class="fw-bold mb-1">Participant Login</h4>
-                <p class="text-white-50 small mb-0">Sign in with your Email Address or System User ID</p>
+                <p class="text-white-50 small mb-0">Sign in with your Email Address or User ID</p>
             </div>
             <div class="card-body p-4 p-md-5">
 
@@ -26,7 +26,7 @@
                     @csrf
 
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold">Email Address or System User ID <span class="text-danger">*</span></label>
+                        <label class="form-label small fw-semibold">Email Address or User ID <span class="text-danger">*</span></label>
                         <div class="input-group">
                             <span class="input-group-text bg-light"><i class="bx bx-user"></i></span>
                             <input type="text" name="login" class="form-control" placeholder="e.g. rajesh@apexlabs.com OR LAB_APEX_8912" value="{{ old('login') }}" required autofocus>
@@ -38,6 +38,9 @@
                         <div class="input-group">
                             <span class="input-group-text bg-light"><i class="bx bx-lock-alt"></i></span>
                             <input type="password" name="password" class="form-control" placeholder="Enter account password" required>
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordSibling(this)">
+                                <i class="bx bx-show"></i>
+                            </button>
                         </div>
                     </div>
 
@@ -64,4 +67,18 @@
         </div>
     </div>
 </div>
+
+<script>
+function togglePasswordSibling(btn) {
+    var input = btn.parentElement.querySelector('input');
+    var icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'bx bx-hide';
+    } else {
+        input.type = 'password';
+        icon.className = 'bx bx-show';
+    }
+}
+</script>
 @endsection

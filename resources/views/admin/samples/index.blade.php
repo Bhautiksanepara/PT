@@ -8,7 +8,10 @@
         <h4 class="fw-bold mb-1">Sample Assignment & Traceability</h4>
         <p class="text-muted small mb-0">Trace auto-generated sample IDs (`PT-2026-001`), production batches, and participant labs</p>
     </div>
-    <div>
+    <div class="d-flex gap-2">
+        <a href="{{ route('admin.samples.export', request()->all()) }}" class="btn btn-outline-success btn-sm shadow-sm fw-semibold">
+            <i class="bx bx-download me-1"></i> Export (CSV/Excel)
+        </a>
         @if($programs->isNotEmpty())
             <div class="dropdown">
                 <button class="btn btn-primary btn-sm dropdown-toggle fw-semibold shadow-sm" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">

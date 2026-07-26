@@ -11,9 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('labs', function (Blueprint $table) {
-            $table->unique('gst_number');
-        });
+        // Unique gst_number constraint removed per client request
     }
 
     /**
@@ -21,8 +19,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('labs', function (Blueprint $table) {
-            $table->dropUnique(['gst_number']);
-        });
+        // Unique gst_number constraint removed per client request
     }
 };

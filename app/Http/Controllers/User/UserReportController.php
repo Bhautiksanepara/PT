@@ -8,12 +8,13 @@ use App\Models\ProgramRegistration;
 use App\Models\Observation;
 use App\Models\StatisticalResult;
 use App\Services\StatsCalculatorService;
+use App\Services\DashboardAlertService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class UserReportController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, DashboardAlertService $dashboardAlertService)
     {
         $lab = Auth::guard('lab')->user();
 
@@ -49,7 +50,7 @@ class UserReportController extends Controller
         return view('user.reports.index', compact('lab', 'registrations', 'availableYears'));
     }
 
-    public function viewIndividualReport($program_id, $registration_id)
+    public function viewIndividualReport($program_id, $registration_id, DashboardAlertService $dashboardAlertService)
     {
         $lab = Auth::guard('lab')->user();
 
@@ -131,6 +132,9 @@ class UserReportController extends Controller
 
         $sample = $registration->sample;
         $qrPayload = "ISO 17043 EVALUATION REPORT\nLAB: {$lab->laboratory_name}\nREG #: {$registration->registration_number}\nPROGRAM: {$program->program_code}\nSAMPLE ID: " . ($sample->sample_code ?? 'N/A') . "\nDATE: " . date('Y-m-d');
+
+        // Mark this specific program's report alert as read now that the lab has opened it
+        $dashboardAlertService->markReleasedReportAlertAsRead($lab->lab_id, $program->program_id);
 
         return view('user.reports.individual', [
             'program'              => $program,

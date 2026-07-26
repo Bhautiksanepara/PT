@@ -5,7 +5,7 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4 class="fw-bold mb-1"><i class="bx bx-package me-2 text-primary"></i> Phase 5 – Sample Dispatches & Live Tracking</h4>
+        <h4 class="fw-bold mb-1"><i class="bx bx-package me-2 text-primary"></i>Sample Dispatches & Live Tracking</h4>
         <p class="text-muted small mb-0">Track physical courier shipments, live AWB tracking URLs, confirm parcel receipts, and view ISO 17043 packing slips</p>
     </div>
     <div>

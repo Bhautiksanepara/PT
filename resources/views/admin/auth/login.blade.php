@@ -96,6 +96,9 @@
                 <div class="input-group">
                     <span class="input-group-text bg-light"><i class="bx bx-lock-alt"></i></span>
                     <input type="password" name="password" id="password" class="form-control @error('password') is-invalid @enderror" placeholder="••••••••" required>
+                    <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordSibling(this)">
+                        <i class="bx bx-show"></i>
+                    </button>
                 </div>
                 @error('password')
                     <div class="text-danger small mt-1">{{ $message }}</div>
@@ -117,5 +120,19 @@
             <div class="small text-muted">Username: <code>admin</code> | Password: <code>password123</code></div>
         </div>
     </div>
+
+    <script>
+    function togglePasswordSibling(btn) {
+        var input = btn.parentElement.querySelector('input');
+        var icon = btn.querySelector('i');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'bx bx-hide';
+        } else {
+            input.type = 'password';
+            icon.className = 'bx bx-show';
+        }
+    }
+    </script>
 </body>
 </html>

@@ -8,9 +8,14 @@
         <h4 class="fw-bold mb-1">Referral Code & Discount System</h4>
         <p class="text-muted small mb-0">Manage promotional codes, percentage/fixed discounts, and referral rules</p>
     </div>
-    <button type="button" class="btn btn-primary btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#createReferralModal">
-        <i class="bx bx-plus me-1"></i> Create Referral Code
-    </button>
+    <div class="d-flex gap-2">
+        <a href="{{ route('admin.referrals.export', request()->all()) }}" class="btn btn-outline-success btn-sm shadow-sm">
+            <i class="bx bx-download me-1"></i> Export (CSV/Excel)
+        </a>
+        <button type="button" class="btn btn-primary btn-sm shadow-sm" data-bs-toggle="modal" data-bs-target="#createReferralModal">
+            <i class="bx bx-plus me-1"></i> Create Referral Code
+        </button>
+    </div>
 </div>
 
 <!-- Stat KPI Cards -->

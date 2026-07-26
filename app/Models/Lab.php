@@ -14,6 +14,7 @@ class Lab extends Authenticatable
 
     protected $fillable = [
         'laboratory_name',
+        'center_name',
         'nabl_certificate_number',
         'laboratory_type',
         'gst_number',
@@ -29,6 +30,7 @@ class Lab extends Authenticatable
         'username',
         'password_hash',
         'status',
+        'profile_completed_at',
     ];
 
     protected $hidden = [

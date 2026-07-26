@@ -87,41 +87,65 @@
 
             <div class="collapse navbar-collapse" id="userNavbar">
                 @auth('lab')
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
-                        <li class="nav-item">
-                            <a class="nav-link text-white fw-semibold {{ request()->routeIs('user.dashboard') ? 'active border-bottom border-primary border-2' : 'text-white-50' }}" href="{{ route('user.dashboard') }}">
-                                <i class="bx bx-grid-alt me-1"></i> Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white fw-semibold {{ request()->routeIs('user.dispatches.*') ? 'active border-bottom border-primary border-2' : 'text-white-50' }}" href="{{ route('user.dispatches.index') }}">
-                                <i class="bx bx-package me-1"></i> Sample Dispatches
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white fw-semibold {{ request()->routeIs('user.observations.*') || request()->routeIs('lab.observations.*') ? 'active border-bottom border-primary border-2' : 'text-white-50' }}" href="{{ route('user.observations.index') }}">
-                                <i class="bx bx-vial me-1"></i> Test Observations
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-white fw-semibold {{ request()->routeIs('user.reports.*') || request()->routeIs('lab.reports.*') ? 'active border-bottom border-primary border-2' : 'text-white-50' }}" href="{{ route('user.reports.index') }}">
-                                <i class="bx bx-award me-1"></i> Reports & Certs
-                            </a>
-                        </li>
-                    </ul>
+                    @if(Auth::guard('lab')->user()->profile_completed_at)
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
+                            <li class="nav-item">
+                                <a class="nav-link text-white fw-semibold {{ request()->routeIs('user.dashboard') ? 'active border-bottom border-primary border-2' : 'text-white-50' }}" href="{{ route('user.dashboard') }}">
+                                    <i class="bx bx-grid-alt me-1"></i> Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white fw-semibold {{ request()->routeIs('user.dispatches.*') ? 'active border-bottom border-primary border-2' : 'text-white-50' }}" href="{{ route('user.dispatches.index') }}">
+                                    <i class="bx bx-package me-1"></i> Sample Dispatches
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white fw-semibold {{ request()->routeIs('user.observations.*') || request()->routeIs('lab.observations.*') ? 'active border-bottom border-primary border-2' : 'text-white-50' }}" href="{{ route('user.observations.index') }}">
+                                    <i class="bx bx-vial me-1"></i> Test Observations
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white fw-semibold {{ request()->routeIs('user.reports.*') || request()->routeIs('lab.reports.*') ? 'active border-bottom border-primary border-2' : 'text-white-50' }}" href="{{ route('user.reports.index') }}">
+                                    <i class="bx bx-award me-1"></i> Reports & Certs
+                                </a>
+                            </li>
+                        </ul>
+                    @else
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4">
+                            <li class="nav-item">
+                                <span class="nav-link text-warning fw-bold">
+                                    <i class="bx bx-lock-alt me-1"></i> Profile Pending
+                                </span>
+                            </li>
+                        </ul>
+                    @endif
 
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="text-end d-none d-md-block">
-                            <div class="fw-bold text-white small">{{ Auth::guard('lab')->user()->laboratory_name }}</div>
-                            <small class="text-white-50 micro-text font-monospace">{{ Auth::guard('lab')->user()->username }}</small>
-                        </div>
-
-                        <form action="{{ route('user.logout') }}" method="POST" class="d-inline">
-                            @csrf
-                            <button type="submit" class="btn btn-outline-light btn-sm px-3">
-                                <i class="bx bx-log-out me-1"></i> Logout
-                            </button>
-                        </form>
+                    <div class="dropdown ms-lg-3">
+                        <button class="btn btn-link text-white text-decoration-none dropdown-toggle d-flex align-items-center gap-2 p-0" type="button" id="labDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div class="text-end d-none d-md-block text-start">
+                                <div class="fw-bold text-white small" style="line-height: 1.2;">
+                                    @if(Auth::guard('lab')->user()->profile_completed_at)
+                                        {{ Auth::guard('lab')->user()->laboratory_name }}
+                                    @else
+                                        {{ Auth::guard('lab')->user()->contact_person }}
+                                    @endif
+                                </div>
+                                <small class="text-white-50 micro-text font-monospace d-block text-end" style="font-size: 0.7rem; line-height: 1.1;">{{ Auth::guard('lab')->user()->username }}</small>
+                            </div>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end mt-2 shadow border-0" aria-labelledby="labDropdown">
+                            @if(Auth::guard('lab')->user()->profile_completed_at)
+                                <li><a class="dropdown-item py-2" href="{{ route('user.dashboard') }}"><i class="bx bx-grid-alt me-2 text-primary"></i> Dashboard</a></li>
+                            @endif
+                            <li><a class="dropdown-item py-2" href="{{ route('user.password.edit') }}"><i class="bx bx-key me-2 text-warning"></i> Change Password</a></li>
+                            <li><hr class="dropdown-divider my-1"></li>
+                            <li>
+                                <form action="{{ route('user.logout') }}" method="POST" class="d-inline">
+                                    @csrf
+                                    <button type="submit" class="dropdown-item py-2 text-danger"><i class="bx bx-log-out me-2"></i> Logout</button>
+                                </form>
+                            </li>
+                        </ul>
                     </div>
                 @else
                     <div class="ms-auto d-flex gap-2">

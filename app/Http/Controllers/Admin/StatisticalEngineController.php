@@ -360,9 +360,9 @@ class StatisticalEngineController extends Controller
             );
         }
 
-        // Update Program Status to Completed & Registration Status to Closed
+        // Mark the scheme as completed after its statistics and report records are published.
         $program->update([
-            'program_status' => 'forcefully_closed',
+            'program_status' => 'completed',
             'registration_status' => 'closed',
         ]);
 

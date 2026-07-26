@@ -6,11 +6,12 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\PtProgram;
+use App\Services\DashboardAlertService;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, DashboardAlertService $dashboardAlertService)
     {
         // 1. Total Participants
         $totalParticipants = DB::table('labs')->count();
@@ -43,8 +44,8 @@ class DashboardController extends Controller
                 $openCount++;
             }
 
-            // Count Active programs (open for registration or active observation submission)
-            if (in_array($status, ['open', 'reopen', 'active', 'upcoming'])) {
+            // Count Active programs: all currently-running programs (open for registration OR in testing/observation phase)
+            if (in_array($status, ['open', 'reopen', 'active'])) {
                 $activePrograms++;
             }
 
@@ -57,8 +58,8 @@ class DashboardController extends Controller
         // 3. Total Revenue
         $totalRevenue = DB::table('payments')->where('payment_status', 'success')->sum('final_amount');
 
-        // 4. Pending Dispatches
-        $pendingDispatches = DB::table('samples')->where('status', 'pending')->count();
+        // 4. Pending Dispatches: samples dispatched by admin but not yet confirmed received by labs
+        $pendingDispatches = DB::table('samples')->where('status', 'dispatched')->count();
 
         // 5. Submitted Observations
         $submittedObservations = DB::table('observations')->whereNotNull('submitted_at')->count();
@@ -150,6 +151,8 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        $dashboardAlerts = $dashboardAlertService->adminAlerts();
+
         return view('admin.dashboard', compact(
             'totalParticipants',
             'activePrograms',
@@ -163,7 +166,8 @@ class DashboardController extends Controller
             'monthlyRevenue',
             'chartRange',
             'availableYears',
-            'recentRegistrations'
+            'recentRegistrations',
+            'dashboardAlerts'
         ));
     }
 }

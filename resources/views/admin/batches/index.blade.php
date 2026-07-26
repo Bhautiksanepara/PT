@@ -8,7 +8,10 @@
         <h4 class="fw-bold mb-1">Sample Production Planning</h4>
         <p class="text-muted small mb-0">Track sample batch preparation, homogeneity testing, and stability testing</p>
     </div>
-    <div>
+    <div class="d-flex gap-2">
+        <a href="{{ route('admin.batches.export', request()->all()) }}" class="btn btn-outline-success shadow-sm btn-sm px-3">
+            <i class="bx bx-download me-1"></i> Export (CSV/Excel)
+        </a>
         <a href="{{ route('admin.batches.create_direct') }}" class="btn btn-primary shadow-sm btn-sm px-3">
             <i class="bx bx-plus me-1"></i> Create Production Batch
         </a>

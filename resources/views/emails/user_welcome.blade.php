@@ -25,12 +25,22 @@
         </div>
         <div class="content">
             <h3>Welcome, {{ $lab->contact_person }}!</h3>
-            <p>Your laboratory <strong>{{ $lab->laboratory_name }}</strong> has been successfully registered on our ISO/IEC 17043 Proficiency Testing Portal.</p>
+            <p>Your laboratory account has been successfully registered on our ISO/IEC 17043 Proficiency Testing Portal.</p>
             
             <p>Below are your secure account login credentials to participate in upcoming PT Schemes:</p>
 
             <div class="cred-box">
-                <div class="cred-label">Registered Email / Username:</div>
+                <div class="cred-label">Contact Person Name:</div>
+                <div class="cred-val" style="font-family: inherit; font-size: 1rem; font-weight: normal; margin-bottom: 10px;">{{ $lab->contact_person }}</div>
+
+                <div class="cred-label">Registered Address:</div>
+                <div class="cred-val" style="font-family: inherit; font-size: 1rem; font-weight: normal; margin-bottom: 10px; line-height: 1.4;">
+                    {{ $lab->address }},<br>
+                    {{ $lab->city }}, {{ $lab->state }} - {{ $lab->pin_code }}<br>
+                    {{ $lab->country }}
+                </div>
+
+                <div class="cred-label">Registered Email:</div>
                 <div class="cred-val">{{ $lab->email }}</div>
 
                 <div class="cred-label">Auto-Generated System User ID:</div>

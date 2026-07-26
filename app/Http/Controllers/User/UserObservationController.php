@@ -62,13 +62,17 @@ class UserObservationController extends Controller
 
         // Deadline check
         $deadline = $program->submission_deadline ? \Carbon\Carbon::parse($program->submission_deadline) : null;
-        $isPastDeadline = ($deadline && now()->greaterThan($deadline->endOfDay())) || ($program->program_status === 'forcefully_closed');
+        $isPastDeadline = ($deadline && now()->greaterThan($deadline->endOfDay())) || in_array($program->program_status, ['forcefully_closed', 'completed']);
 
         // Fetch existing observations
         $existingObservations = Observation::with('files')
             ->where('registration_id', $registration->registration_id)
             ->get()
             ->keyBy('parameter_id');
+
+        // Lock form if already submitted OR past deadline
+        $hasSubmitted = $existingObservations->count() > 0;
+        $isPastDeadline = ($deadline && now()->greaterThan($deadline->endOfDay())) || in_array($program->program_status, ['forcefully_closed', 'completed']) || $hasSubmitted;
 
         return view('user.observations.form', compact(
             'registration',
@@ -96,9 +100,15 @@ class UserObservationController extends Controller
             return redirect()->route('user.observations.index')->with('error', 'Sample code has not been assigned by Admin yet.');
         }
 
+        // Check if observations already exist (locked/disabled edit)
+        $hasSubmitted = Observation::where('registration_id', $registration->registration_id)->exists();
+        if ($hasSubmitted) {
+            return redirect()->route('user.observations.index')->with('error', 'Observations have already been submitted and cannot be changed.');
+        }
+
         // Deadline check
         $deadline = $program->submission_deadline ? \Carbon\Carbon::parse($program->submission_deadline) : null;
-        if (($deadline && now()->greaterThan($deadline->endOfDay())) || ($program->program_status === 'forcefully_closed')) {
+        if (($deadline && now()->greaterThan($deadline->endOfDay())) || in_array($program->program_status, ['forcefully_closed', 'completed'])) {
             return redirect()->back()->with('error', 'Submission deadline has passed. This observation form is locked.');
         }
 

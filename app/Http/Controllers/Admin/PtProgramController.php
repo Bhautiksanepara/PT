@@ -62,7 +62,51 @@ class PtProgramController extends Controller
         }
 
         if ($request->filled('registration_status')) {
-            $query->where('registration_status', $request->registration_status);
+            $regStatus = $request->registration_status;
+            $todayStr = date('Y-m-d');
+            
+            if ($regStatus === 'closed') {
+                $query->where(function ($q) use ($todayStr) {
+                    $q->where('registration_status', 'closed')
+                      ->orWhereIn('program_status', ['forcefully_closed', 'completed'])
+                      ->orWhere(function ($sub) use ($todayStr) {
+                          $sub->whereNotNull('registration_end_date')
+                              ->where('registration_end_date', '<', $todayStr);
+                      });
+                });
+            } elseif ($regStatus === 'upcoming') {
+                $query->where(function ($q) {
+                    $q->whereNull('registration_status')
+                      ->orWhere('registration_status', '!=', 'closed');
+                })
+                ->where(function ($q) {
+                    $q->whereNull('program_status')
+                      ->orWhereNotIn('program_status', ['forcefully_closed', 'completed']);
+                })
+                ->where(function ($q) use ($todayStr) {
+                    $q->whereNull('registration_end_date')
+                      ->orWhere('registration_end_date', '>=', $todayStr);
+                })
+                ->whereNotNull('registration_start_date')
+                ->where('registration_start_date', '>', $todayStr);
+            } elseif ($regStatus === 'active') {
+                $query->where(function ($q) {
+                    $q->whereNull('registration_status')
+                      ->orWhere('registration_status', '!=', 'closed');
+                })
+                ->where(function ($q) {
+                    $q->whereNull('program_status')
+                      ->orWhereNotIn('program_status', ['forcefully_closed', 'completed']);
+                })
+                ->where(function ($q) use ($todayStr) {
+                    $q->whereNull('registration_start_date')
+                      ->orWhere('registration_start_date', '<=', $todayStr);
+                })
+                ->where(function ($q) use ($todayStr) {
+                    $q->whereNull('registration_end_date')
+                      ->orWhere('registration_end_date', '>=', $todayStr);
+                });
+            }
         }
 
         $programs = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
